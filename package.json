@@ -1,0 +1,89 @@
+{
+  "author": {
+    "name": "Jan Bialostok",
+    "email": "janbialostok@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/typesettin/periodicjs.core.protocols/issues"
+  },
+  "contributors": [
+    {
+      "name": "Yaw Joseph Etse",
+      "email": "yaw.etse@gmail.com"
+    },
+    {
+      "name": "Jan Bialostok",
+      "email": "janbialostok@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "periodicjs.core.responder": "~0.0.1"
+  },
+  "description": "Customizable CMS platform",
+  "devDependencies": {
+    "chai": "~3.0.0",
+    "coveralls": "^2.11.15",
+    "fs-extra": "~0.30.0",
+    "grunt": "~0.4.5",
+    "grunt-contrib-jshint": "~0.11.2",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-coveralls": "^1.0.1",
+    "grunt-jsbeautifier": "~0.2.10",
+    "grunt-jsdoc": "~0.6.7",
+    "grunt-mocha-cov": "^0.4.0",
+    "grunt-mocha-istanbul": "^5.0.2",
+    "grunt-newer": "~1.1.1",
+    "grunt-simple-mocha": "~0.4.0",
+    "istanbul": "^0.4.5",
+    "jsdoc": "^3.4.3",
+    "mocha": "~2.2.5",
+    "mocha-lcov-reporter": "^1.2.0",
+    "moment": "~2.13.0",
+    "promisie": "~1.5.2"
+  },
+  "directories": {},
+  "dist": {
+    "shasum": "fc4427ddd180df6487384686294626b175a60262",
+    "tarball": "https://registry.npmjs.org/periodicjs.core.protocols/-/periodicjs.core.protocols-0.0.1.tgz"
+  },
+  "engines": {
+    "node": "^6.x"
+  },
+  "keywords": [
+    "CDS",
+    "CMS",
+    "Content Delivery System",
+    "Content Management System",
+    "Periodic Decoupled Framework",
+    "content management framework",
+    "typeset",
+    "ui manager",
+    "wysiwyg"
+  ],
+  "main": "index.js",
+  "maintainers": [
+    {
+      "name": "ecasilla",
+      "email": "ecasilla@icloud.com"
+    },
+    {
+      "name": "janbialostok",
+      "email": "janbialostok@gmail.com"
+    },
+    {
+      "name": "yawetse",
+      "email": "yaw.etse@gmail.com"
+    }
+  ],
+  "name": "periodicjs.core.protocols",
+  "optionalDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/typesettin/periodicjs.core.protocols.git"
+  },
+  "scripts": {
+    "test": "mocha -R spec --recursive"
+  },
+  "version": "0.0.1",
+  "license": "MIT"
+}
