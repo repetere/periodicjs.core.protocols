@@ -41,6 +41,8 @@ const PROTOCOL_ADAPTER_INTERFACE = class Adapter_Interface {
 };
 
 module.exports = new PROTOCOL_ADAPTER_INTERFACE({
-	render: 'function',
-	error: 'function'
+	error: 'function',
+	warn: 'function',
+	respond: 'function',
+	exception: 'function'
 });
