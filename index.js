@@ -44,5 +44,6 @@ module.exports = new PROTOCOL_ADAPTER_INTERFACE({
 	error: 'function',
 	warn: 'function',
 	respond: 'function',
-	exception: 'function'
+	exception: 'function',
+	redirect: 'function'
 });

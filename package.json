@@ -21,6 +21,7 @@
   },
   "description": "Customizable CMS platform",
   "devDependencies": {
+    "capitalize": "^1.0.0",
     "chai": "~3.0.0",
     "coveralls": "^2.11.15",
     "express": "^4.14.0",
@@ -40,6 +41,8 @@
     "mocha": "~2.2.5",
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
+    "mongoose": "^4.7.2",
+    "pluralize": "^3.0.0",
     "promisie": "~1.5.2",
     "socket.io": "^1.7.1"
   },
