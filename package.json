@@ -41,7 +41,7 @@
     "mocha": "~2.2.5",
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
-    "mongoose": "^4.7.2",
+    "periodicjs.core.data": "~0.0.4",
     "pluralize": "^3.0.0",
     "promisie": "~1.5.2",
     "socket.io": "^1.7.1"

@@ -2,6 +2,12 @@
 const pluralize = require('pluralize');
 const capitalize = require('capitalize');
 
+/**
+ * Generates a set of standard inflections from a given model name
+ * @param  {Object} [options={}] Configurable options for string inflection
+ * @param {string} options.model_name String to inflect
+ * @return {Object}         A set of inflections from a given string
+ */
 module.exports = function getViewModelProperties (options = {}) {
 	let model_name = options.model_name;
 	let viewmodel = {

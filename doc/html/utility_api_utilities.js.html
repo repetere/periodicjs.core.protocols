@@ -1,4 +1,32 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utility/api_utilities.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utility/api_utilities.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
 const ReponderInterface = require('periodicjs.core.responder');
 const pluralize = require('pluralize');
 const path = require('path');
@@ -151,7 +179,7 @@ const INDEX = function (options = {}) {
         user: req.user,
         [viewmodel.name_plural]: req.controllerData[viewmodel.name_plural],
         [viewmodel.page_plural_count]: req.controllerData[viewmodel.page_plural_count],
-        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
+        [viewmodel.page_pages]: (req.query.limit &amp;&amp; !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
       };
     },
     model_name
@@ -200,7 +228,7 @@ const SEARCH = function (options = {}) {
         user: req.user,
         [viewmodel.name_plural]: req.controllerData[viewmodel.name_plural],
         [viewmodel.page_plural_count]: req.controllerData[viewmodel.page_plural_count],
-        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
+        [viewmodel.page_pages]: (req.query.limit &amp;&amp; !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
       };
     },
     model_name
@@ -274,7 +302,7 @@ const LOAD_WITH_LIMIT = function (options = {}) {
   let viewmodel = setViewModelProperties(options.model_name);
   return function (req, res, next) {
     req.query.limit = req.query[`${ viewmodel.name_plural }perpage`] || req.query.docsperpage || req.query.limit || req.body[`${ viewmodel.name_plural }perpage`] || req.body.docsperpage || req.body.limit || 15;
-    req.query.pagenum = ((req.query.pagenum && req.query.pagenum > 0) || (req.body.pagenum && req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;
+    req.query.pagenum = ((req.query.pagenum &amp;&amp; req.query.pagenum > 0) || (req.body.pagenum &amp;&amp; req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;
     next();
   };
 };
@@ -292,10 +320,10 @@ const PAGINATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   let viewmodel = setViewModelProperties(options.model_name);
   return function (req, res) {
-    let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
+    let query = (req.controllerData &amp;&amp; req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
     let population = options.load_multiple_model_population || '';
-    let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
-    fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.fields : fields;
+    let fields = (options.fields &amp;&amp; typeof options.fields === 'object') ? options.fields : undefined;
+    fields = (req.controllerData &amp;&amp; req.controllerData.model_fields) ? req.controllerData.fields : fields;
     dbAdapter.search(Object.assign(req.query, { fields, population, query, paginate: true }))
       .then(result => {
         let currentpage;
@@ -342,11 +370,11 @@ const PAGINATE = function (options = {}) {
 const LOAD = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   return function (req, res, next) {
-    let fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : undefined;
+    let fields = (req.controllerData &amp;&amp; req.controllerData.model_fields) ? req.controllerData.model_fields : undefined;
     dbAdapter.load({
       query: req.params.id,
       fields,
-      population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
+      population: (req.controllerData &amp;&amp; (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
     })
       .then(result => {
         req.controllerData[options.model_name] = result;
@@ -362,3 +390,26 @@ module.exports = (function () {
   view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs' });
   return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, setViewModelProperties };
 })();
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HTTP_ADAPTER.html">HTTP_ADAPTER</a></li><li><a href="PROTOCOL_ADAPTER_INTERFACE.html">PROTOCOL_ADAPTER_INTERFACE</a></li><li><a href="REST_ADAPTER.html">REST_ADAPTER</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_generateSuccessDetails">_generateSuccessDetails</a></li><li><a href="global.html#_IMPLEMENT">_IMPLEMENT</a></li><li><a href="global.html#composeMiddleware">composeMiddleware</a></li><li><a href="global.html#CREATE">CREATE</a></li><li><a href="global.html#EDIT">EDIT</a></li><li><a href="global.html#generateErrorDetails">generateErrorDetails</a></li><li><a href="global.html#INDEX">INDEX</a></li><li><a href="global.html#LOAD">LOAD</a></li><li><a href="global.html#LOAD_WITH_COUNT">LOAD_WITH_COUNT</a></li><li><a href="global.html#LOAD_WITH_LIMIT">LOAD_WITH_LIMIT</a></li><li><a href="global.html#NEW">NEW</a></li><li><a href="global.html#PAGINATE">PAGINATE</a></li><li><a href="global.html#REMOVE">REMOVE</a></li><li><a href="global.html#SEARCH">SEARCH</a></li><li><a href="global.html#setViewModelProperties">setViewModelProperties</a></li><li><a href="global.html#SHOW">SHOW</a></li><li><a href="global.html#UPDATE">UPDATE</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Fri Dec 09 2016 18:12:09 GMT-0500 (EST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
