@@ -4,10 +4,23 @@ const moment = require('moment');
 const Promisie = require('promisie');
 const fs = Promisie.promisifyAll(require('fs-extra'));
 const ResponderAdapterInterface = require('periodicjs.core.responder');
+const DBAdapterInterface = require('periodicjs.core.data');
+const mongoose = require('mongoose');
+const ExampleSchema = require(path.join(__dirname, '../example/mongoose_model'));
 const chai = require('chai');
 const expect = chai.expect;
 const UTILITY = require(path.join(__dirname, '../../utility/index'));
 const API_UTILITY = UTILITY.api;
+
+var Example;
+var connectDB = function () {
+	return new Promisie((resolve, reject) => {
+		mongoose.connect('mongodb://localhost/test_core_protocols');
+		let db = mongoose.connection;
+		db.on('error', reject)
+			.once('open', resolve);
+	});
+};
 
 describe('API Utilities', function () {
 	describe('setViewModelProperties', function () {
@@ -17,12 +30,12 @@ describe('API Utilities', function () {
 		it('Should be able to return a set of inflected model name values', () => {
 			let start = moment();
 			let inflected;
-			for (let i = 0; i < 1000; i++) {
+			for (let i = 0; i < 10000; i++) {
 				let value = (i % 2 === 0) ? 'application' : 'customer';
 				inflected = API_UTILITY.setViewModelProperties({ model_name: value });
 			}
 			let end = moment();
-			inflectTime = end.diff(start, 'milliseconds') / 1000;
+			inflectTime = end.diff(start, 'milliseconds') / 10000;
 			expect(inflected).to.have.property('name');
 			expect(inflected).to.have.property('name_plural');
 			expect(inflected).to.have.property('capital_name');
@@ -35,9 +48,9 @@ describe('API Utilities', function () {
 		it('Should be able to return pre-set inflected values if model name has not changed', () => {
 			let start = moment();
 			let inflected;
-			for (let i = 0; i < 1000; i++) inflected = API_UTILITY.setViewModelProperties({ model_name: 'customer' });
+			for (let i = 0; i < 10000; i++) inflected = API_UTILITY.setViewModelProperties({ model_name: 'customer' });
 			let end = moment();
-			expect(end.diff(start, 'milliseconds') / 1000).to.be.below(inflectTime);
+			expect(end.diff(start, 'milliseconds') / 10000).to.be.below(inflectTime);
 		});
 	});
 	describe('Render View', function () {
@@ -567,14 +580,73 @@ describe('API Utilities', function () {
 	describe('Deliver Data', function () {
 		let db;
 		let responder;
+		let protocol;
+		let person = {
+			contact: {
+				first_name: 'Hello',
+				last_name: 'World',
+				dob: moment('12/12/1990', 'MM/DD/YYYY').format()
+			}
+		};
 		before(done => {
-
+			connectDB()
+				.then(() => {
+					Example = mongoose.model('Example', ExampleSchema);
+					db = {
+						example: DBAdapterInterface.create({ adapter: 'mongo', model: Example })
+					};
+					responder = ResponderAdapterInterface.create({ adapter: 'json' });
+					protocol = { 
+						responder, 
+						db,
+						redirect: function (req, res, options) {
+							return Promisie.resolve(options);
+						},
+						error: () => true,
+						exception: function (req, res, options) {
+							return Promisie.reject(options.err);
+						}
+					};
+					done();
+				}, done);
 		});
 		after(done => {
-
+			if (Example) {
+				let ChangeSet = mongoose.model('Changeset');
+				Promisie.promisify(ChangeSet.remove, ChangeSet)({})
+					.then(() => Promisie.promisify(Example.remove, Example)({}))
+					.then(() => done())
+					.catch(done);
+			}
+			else done();
 		});
-		describe('API_Adapter REMOVE utility method', function () {
-
+		describe('API_Adapter CREATE utility method', function () {
+			it('Should be able to create documents and return a redirect path', done => {
+				let createDocument = API_UTILITY.CREATE({ protocol, model_name: 'example' });
+				expect(createDocument).to.be.a('function');
+				expect(createDocument.length).to.equal(2);
+				createDocument({ body: person })
+					.try(result => {
+						expect(result).to.be.an('object');
+						expect(result).to.have.property('model_name');
+						expect(result.model_name).to.equal('p-admin/content/example/')
+						done();
+					})
+					.catch(done);
+			});
+			it('Should handle an error', done => {
+				let createDocument = API_UTILITY.CREATE({ protocol, model_name: 'example' });
+				expect(createDocument).to.be.a('function');
+				expect(createDocument.length).to.equal(2);
+				createDocument()
+					.then(result => {
+						console.log(result);
+						done(new Error('Should not execute'));
+					}, err => {
+						expect(err).to.be.ok;
+						done();
+					});
+			});
 		});
 	});
 });

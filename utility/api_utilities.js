@@ -224,13 +224,19 @@ const SEARCH = function (options = {}) {
 const CREATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   return function (req, res) {
-    dbAdapter.create({ newdoc: req.body })
-      .then(options.protocol.redirect.bind(options.protocol, req, res, {
-        model_name: `p-admin/content/${ options.model_name }/`
-      }), err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
-      });
+    try {
+      return dbAdapter.create({ newdoc: req.body })
+        .then(options.protocol.redirect.bind(options.protocol, req, res, {
+          model_name: `p-admin/content/${ options.model_name }/`
+        }), err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
