@@ -2,7 +2,7 @@
 const ReponderInterface = require('periodicjs.core.responder');
 const pluralize = require('pluralize');
 const path = require('path');
-const UTILITY = require(path.join(__dirname, '../utility/index'));
+const expand_names = require(path.join(__dirname, './expand_names'));
 
 var view_adapter;
 var active_model = {
@@ -27,17 +27,18 @@ var composeMiddleware = function (options = {}) {
   let { viewname, basename, model_name } = options;
   let isHTMLAdapter = (options.protocol.responder.constructor === view_adapter.constructor);
   let render = view_adapter.render.bind(view_adapter);
-  viewname = (typeof viewname === 'string') ? viewname : `${ model_name }/${ basename }`;
+  options.viewname = (typeof viewname === 'string') ? viewname : `${ model_name }/${ basename }`;
   return function (req, res) {
     let data = options.transform_data(req);
-    if (isHTMLAdapter || options.strict) options.protocol.respond(req, res, Object.assign({}, options, { data }));
+    if (isHTMLAdapter || options.strict) return options.protocol.respond(req, res, Object.assign({}, options, { data }));
     else {
-      render(data, options)
+      return render(data, options)
         .then(responder_override => {
-          options.protocol.respond(req, res, { responder_override });
-        }, err => {
+          return options.protocol.respond(req, res, { responder_override });
+        })
+        .catch(err => {
           options.protocol.error(req, res, { err });
-          options.protocol.exception(req, res, { err });
+          return options.protocol.exception(req, res, { err });
         });
     }
   };
@@ -51,7 +52,7 @@ var composeMiddleware = function (options = {}) {
 var setViewModelProperties = function (model_name) {
   let viewmodel;
   if (active_model.label !== model_name || !active_model.expanded_names) {
-    viewmodel = UTILITY.expand_names(model_name);
+    viewmodel = expand_names(model_name);
     active_model.label = model_name;
     active_model.expanded_names = viewmodel;
   }
@@ -63,13 +64,14 @@ var setViewModelProperties = function (model_name) {
  * Generates middleware that will render the "new" view
  * @param {Object} options Configurable options for "new" view rendering
  * @param {Boolean} [options.use_plural_view_name] If true the plural value of the model name will be used in the view
+ * @param {string} options.template_ext Used in specifying a custom file extension for view files
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "new" view
  */
 const NEW = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: 'new',
+    basename: (typeof options.template_ext === 'string') ? `new${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'new.ejs',
     transform_data: function (req) {
       return {
         pagedata: {
@@ -87,13 +89,14 @@ const NEW = function (options = {}) {
  * Generates middleware that will render the "show" view
  * @param {Object} options Configurable options for "show" view rendering
  * @param {Boolean} [options.use_plural_view_name] If true the plural value of the model name will be used in the view
+ * @param {string} options.template_ext Used in specifying a custom file extension for view files
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "show" view
  */
 const SHOW = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: 'show',
+    basename: (typeof options.template_ext === 'string') ? `show${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'show.ejs',
     transform_data: function (req) {
       return {
         pagedata: {
@@ -111,13 +114,14 @@ const SHOW = function (options = {}) {
  * Generates middleware that will render the "edit" view
  * @param {Object} options Configurable options for "edit" view rendering
  * @param {Boolean} [options.use_plural_view_name] If true the plural value of the model name will be used in the view
+ * @param {string} options.template_ext Used in specifying a custom file extension for view files
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "edit" view
  */
 const EDIT = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: 'edit',
+    basename: (typeof options.template_ext === 'string') ? `edit${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'edit.ejs',
     transform_data: function (req) {
       return {
         pagedata: {
@@ -135,14 +139,15 @@ const EDIT = function (options = {}) {
  * Generates middleware that will render the "index" view
  * @param {Object} options Configurable options for "index" view rendering
  * @param {Boolean} [options.use_plural_view_name] If true the plural value of the model name will be used in the view
+ * @param {string} options.template_ext Used in specifying a custom file extension for view files
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "index" view
  */
 const INDEX = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: 'index',
+    basename: (typeof options.template_ext === 'string') ? `index${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'index.ejs',
     transform_data: function (req) {
       return {
         pagedata: {
@@ -172,7 +177,7 @@ const REMOVE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db[viewmodel.name_plural];
   return function (req, res) {
     let removeDocument = req.controllerData[viewmodel.name];
-    dbAdapter.delete({ deleteid: removeDocument._id || removeDocument[dbAdapter.docid] })
+    return dbAdapter.delete({ deleteid: removeDocument._id || removeDocument[dbAdapter.docid] })
       .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
         options.protocol.error(req, res, { err });
         options.protocol.exception(req, res, { err });
@@ -184,14 +189,15 @@ const REMOVE = function (options = {}) {
  * Generates middleware that handles rendering a view from paginated data
  * @param {Object} options Configurable options for querying middleware
  * @param {Boolean} [options.use_plural_view_name] If true the plural value of the model name will be used in the view
+ * @param {string} options.template_ext Used in specifying a custom file extension for view files
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns middleware that handles rendering a view from paginated data
  */
 const SEARCH = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: 'search_index',
+    basename: (typeof options.template_ext === 'string') ? `search${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'search.ejs',
     transform_data: function (req) {
       return {
         pagedata: {
