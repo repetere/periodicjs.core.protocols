@@ -15,10 +15,13 @@ const API_UTILITY = UTILITY.api;
 var Example;
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
-		mongoose.connect('mongodb://localhost/test_core_protocols');
-		let db = mongoose.connection;
-		db.on('error', reject)
-			.once('open', resolve);
+		if (mongoose.connection.readyState) resolve();
+		else {
+			mongoose.connect('mongodb://localhost/test_core_protocols');
+			let db = mongoose.connection;
+			db.on('error', reject)
+				.once('open', resolve);
+		}
 	});
 };
 
@@ -30,12 +33,12 @@ describe('API Utilities', function () {
 		it('Should be able to return a set of inflected model name values', () => {
 			let start = moment();
 			let inflected;
-			for (let i = 0; i < 10000; i++) {
+			for (let i = 0; i < 50000; i++) {
 				let value = (i % 2 === 0) ? 'application' : 'customer';
 				inflected = API_UTILITY.setViewModelProperties({ model_name: value });
 			}
 			let end = moment();
-			inflectTime = end.diff(start, 'milliseconds') / 10000;
+			inflectTime = end.diff(start, 'milliseconds') / 50000;
 			expect(inflected).to.have.property('name');
 			expect(inflected).to.have.property('name_plural');
 			expect(inflected).to.have.property('capital_name');
@@ -48,9 +51,9 @@ describe('API Utilities', function () {
 		it('Should be able to return pre-set inflected values if model name has not changed', () => {
 			let start = moment();
 			let inflected;
-			for (let i = 0; i < 10000; i++) inflected = API_UTILITY.setViewModelProperties({ model_name: 'customer' });
+			for (let i = 0; i < 50000; i++) inflected = API_UTILITY.setViewModelProperties({ model_name: 'customer' });
 			let end = moment();
-			expect(end.diff(start, 'milliseconds') / 10000).to.be.below(inflectTime);
+			expect(end.diff(start, 'milliseconds') / 50000).to.be.below(inflectTime);
 		});
 	});
 	describe('Render View', function () {
@@ -188,7 +191,7 @@ describe('API Utilities', function () {
 					let respondNew = API_UTILITY.SHOW({ protocol: protocol(), model_name: path.dirname(templatePath) });
 					expect(respondNew).to.be.a('function');
 					expect(respondNew.length).to.equal(2);
-					respondNew({ controllerData })
+					respondNew({ controllerData, query: {} })
 						.try(result => {
 							expect(result).to.be.a('string');
 							expect(/SHOW/.test(result)).to.be.true;
@@ -200,7 +203,7 @@ describe('API Utilities', function () {
 					let respondNew = API_UTILITY.SHOW({ protocol: protocol(), model_name: path.dirname(templatePath), strict: true });
 					expect(respondNew).to.be.a('function');
 					expect(respondNew.length).to.equal(2);
-					respondNew({ controllerData })
+					respondNew({ controllerData, query: {} })
 						.try(result => {
 							expect(result).to.be.an('object');
 							expect(result).to.have.property('result');
@@ -215,7 +218,7 @@ describe('API Utilities', function () {
 					let respondNew = API_UTILITY.SHOW({ protocol: protocol(), model_name: path.dirname(templatePath), strict: true, sync: true });
 					expect(respondNew).to.be.a('function');
 					expect(respondNew.length).to.equal(2);
-					let result = respondNew({ controllerData });
+					let result = respondNew({ controllerData, query: {} });
 					expect(result).to.be.an('object');
 					expect(result).to.have.property('result');
 					expect(result).to.have.property('status');
@@ -250,7 +253,7 @@ describe('API Utilities', function () {
 					});
 					expect(respondNew).to.be.a('function');
 					expect(respondNew.length).to.equal(2);
-					respondNew({ controllerData })
+					respondNew({ controllerData, query: {} })
 						.try(result => {
 							expect(result).to.be.a('string');
 							expect(/SHOW/.test(result)).to.be.true;
@@ -673,7 +676,8 @@ describe('API Utilities', function () {
 				let paginate = API_UTILITY.PAGINATE({ protocol, model_name: 'example', fields: {contact: 0 }, query: {} });
 				let query = {
 					pagelength: 2,
-					limit: 5
+					limit: 5,
+					json: true
 				};
 				paginate({ query })
 					.try(result => {
@@ -691,7 +695,8 @@ describe('API Utilities', function () {
 				let query = {
 					pagelength: 2,
 					pagenum: 1,
-					limit: 6
+					limit: 6,
+					json: true
 				};
 				paginate({ query, controllerData: { model_fields: { contact: 1 } } })
 					.try(result => {
@@ -839,6 +844,30 @@ describe('API Utilities', function () {
 					.then(() => {
 						done(new Error('Should not execute'));
 					}, e => {
+						expect(e instanceof Error).to.be.true;
+						done();
+					});
+			});
+		});
+		describe('API_Adapter REMOVE utility method', function () {
+			it('Should be able to remove a document', done => {
+				let removeDocument = API_UTILITY.REMOVE({ model_name: 'example', protocol });
+				let controllerData = {
+					example: originalrevision
+				};
+				removeDocument({ controllerData, return_deleted: true })
+					.then(() => Promisie.promisify(Example.findOne, Example)({ _id: originalrevision._id }))
+					.try(result => {
+						expect(result).to.not.be.ok;
+						done();
+					})
+					.catch(done);
+			});
+			it('Should handle an error', done => {
+				let removeDocument = API_UTILITY.REMOVE({ model_name: 'example', protocol });
+				removeDocument()
+					.then(() => done(new Error('Should not execute')))
+					.catch(e => {
 						expect(e instanceof Error).to.be.true;
 						done();
 					});

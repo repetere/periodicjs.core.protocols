@@ -107,7 +107,11 @@ const SHOW = function (options = {}) {
     },
     model_name
   });
-  return composeMiddleware(middleware_options);
+  let composed = composeMiddleware(middleware_options);
+  return function (req, res) {
+    if (req.query && req.query.json) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    return composed(req, res);
+  };
 };
 
 /**
@@ -161,7 +165,11 @@ const INDEX = function (options = {}) {
     },
     model_name
   });
-  return composeMiddleware(middleware_options);
+  let composed = composeMiddleware(middleware_options);
+  return function (req, res) {
+    if (req.query && req.query.json) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    return composed(req, res);
+  };
 };
 
 /**
@@ -172,16 +180,22 @@ const INDEX = function (options = {}) {
  * @return {Function} Returns middleware that handles deleting items
  */
 const REMOVE = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db[viewmodel.name_plural];
   return function (req, res) {
-    let removeDocument = req.controllerData[viewmodel.name];
-    return dbAdapter.delete({ deleteid: removeDocument._id || removeDocument[dbAdapter.docid] })
-      .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
-      });
+    try {
+      let removeDocument = req.controllerData[viewmodel.name];
+      return dbAdapter.delete({ deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid] })
+        .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
@@ -309,7 +323,7 @@ const LOAD_WITH_LIMIT = function (options = {}) {
 const PAGINATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   let viewmodel = setViewModelProperties(options);
-  return function (req, res) {
+  return function (req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
       let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
@@ -331,21 +345,24 @@ const PAGINATE = function (options = {}) {
             currentpage = result['0'];
             next_page = result['1'];
           }
-          return options.protocol.respond(req, res, {
-            data: {
-              [viewmodel.page_plural_count]: result.total,
-              [`${ viewmodel.name }limit`]: req.query.limit,
-              [`${ viewmodel.name }offset`]: req.query.offset,
-              [`${ viewmodel.name }pages`]: result.total_pages,
-              [`${ viewmodel.name }page_current`]: currentpage,
-              [`${ viewmodel.name }page_next`]: next_page,
-              [`${ viewmodel.name }page_prev`]: prev_page,
-              [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
-                if (/^\d+$/.test(key)) pages[key] = result[key];
-                return pages;
-              }, {})
-            }
-          });
+          let data = {
+            [viewmodel.page_plural_count]: result.total,
+            [`${ viewmodel.name }limit`]: req.query.limit,
+            [`${ viewmodel.name }offset`]: req.query.offset,
+            [`${ viewmodel.name }pages`]: result.total_pages,
+            [`${ viewmodel.name }page_current`]: currentpage,
+            [`${ viewmodel.name }page_next`]: next_page,
+            [`${ viewmodel.name }page_prev`]: prev_page,
+            [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
+              if (/^\d+$/.test(key)) pages[key] = result[key];
+              return pages;
+            }, {})
+          };
+          if (req.query && req.query.json) return options.protocol.respond(req, res, { data });
+          else {
+            req.controllerData[viewmodel.name_plural] = data;
+            next();
+          }
         }, err => {
           options.protocol.error(req, res, { err });
           return options.protocol.exception(req, res, { err });

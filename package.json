@@ -21,8 +21,10 @@
   },
   "description": "Customizable CMS platform",
   "devDependencies": {
+    "body-parser": "^1.15.2",
     "capitalize": "^1.0.0",
     "chai": "~3.0.0",
+    "chai-spies": "^0.7.1",
     "coveralls": "^2.11.15",
     "express": "^4.14.0",
     "fs-extra": "~0.30.0",
@@ -45,6 +47,7 @@
     "periodicjs.core.data": "~0.0.5",
     "pluralize": "^3.0.0",
     "promisie": "~1.5.2",
+    "request": "^2.79.0",
     "socket.io": "^1.7.1"
   },
   "directories": {},

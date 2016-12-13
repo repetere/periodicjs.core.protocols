@@ -189,14 +189,15 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 		this.controller = (this.controller && typeof this.controller === 'object') ? this.controller : {};
 		if (typeof options.model_name === 'string') {
 			let implemented = this.api.implement(Object.assign(options, { router }));
-			this.router = implemented.router;
+			this.router = (implemented.router && implemented.router._router) ? implemented.router._router : implemented.router;
+			router = this.router;
 			delete implemented.router;
 			this.controller[options.model_name] = implemented;
 		}
 		else {
 			Object.keys(this.db).forEach(key => {
 				let implemented = this.api.implement(Object.assign(options, { router, model_name: key }));
-				this.router = implemented.router;
+				this.router = (implemented.router && implemented.router._router) ? implemented.router._router : implemented.router;
 				router = this.router;
 				delete implemented.router;
 				this.controller[key] = implemented;

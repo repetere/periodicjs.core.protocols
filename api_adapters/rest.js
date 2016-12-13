@@ -71,7 +71,7 @@ const REST_ADAPTER = class REST_Adapter {
 	 */
 	routing (options = {}) {
 		let { router, middleware, override, model_name, viewmodel } = options;
-		if (!viewmodel) viewmodel = API_UTILITIES.setViewModelProperties(model_name);
+		if (!viewmodel) viewmodel = API_UTILITIES.setViewModelProperties({ model_name });
 		router = (router) ? router : this.protocol.express.Router();
 		router.get(`/${ viewmodel.name_plural }/new`, (override && override.create_index && Array.isArray(override.create_index)) ? override.create_index : middleware.new);
 		router.get(`/${ viewmodel.name_plural }/edit`, (override && override.update_index && Array.isArray(override.update_index)) ? override.update_index : middleware.edit);
@@ -92,9 +92,15 @@ const REST_ADAPTER = class REST_Adapter {
 	 * @return {Object}         Returns an object that has an express router and controller functions
 	 */
 	implement (options = {}) {
-		let viewmodel = API_UTILITIES.setViewModelProperties(options.model_name);
+		let viewmodel = API_UTILITIES.setViewModelProperties(options);
 	  let router;
-	  if (this.protocol.express || options.router) router = (options.router) ? options.router : this.protocol.express.Router();
+	  if ((this.protocol.express || options.router) && options.router !== false) {
+	  	if (options.router) router = options.router;
+	  	else {
+	  		if (typeof this.protocol.express.Router === 'function') router = this.protocol.express.Router();
+	  		else router = this.protocol.express;
+	  	}
+	  }
 	 	return _IMPLEMENT.call(this, Object.assign({}, options, { viewmodel, router }));
 	}
 };
