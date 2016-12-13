@@ -17,7 +17,7 @@
     }
   ],
   "dependencies": {
-    "periodicjs.core.responder": "~0.0.1"
+    "periodicjs.core.responder": "~0.0.2"
   },
   "description": "Customizable CMS platform",
   "devDependencies": {
