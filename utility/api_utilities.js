@@ -302,46 +302,53 @@ const LOAD_WITH_LIMIT = function (options = {}) {
  */
 const PAGINATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   return function (req, res) {
-    let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
-    let population = options.load_multiple_model_population || '';
-    let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
-    fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.fields : fields;
-    dbAdapter.search(Object.assign(req.query, { fields, population, query, paginate: true }))
-      .then(result => {
-        let currentpage;
-        let next_page;
-        let prev_page;
-        if (req.query.pagenum) {
-          let hasPage = result[req.query.pagenum.toString()];
-          currentpage = (hasPage) ? hasPage : result['0'];
-          next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
-          prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
-        }
-        else {
-          currentpage = result['0'];
-          next_page = result['1'];
-        }
-        options.protocol.respond(req, res, {
-          data: {
-            [viewmodel.page_plural_count]: result.total,
-            [`${ viewmodel.name }limit`]: req.query.limit,
-            [`${ viewmodel.name }offset`]: req.query.offset,
-            [`${ viewmodel.name }pages`]: result.total_pages,
-            [`${ viewmodel.name }page_current`]: currentpage,
-            [`${ viewmodel.name }page_next`]: next_page,
-            [`${ viewmodel.name }page_prev`]: prev_page,
-            [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
-              if (/^\d+$/.test(key)) pages[key] = result[key];
-              return pages;
-            }, {})
+    try {
+      req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
+      let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
+      let population = options.load_multiple_model_population || '';
+      let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
+      fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : fields;
+      return dbAdapter.search(Object.assign(req.query, { fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true }))
+        .then(result => {
+          let currentpage;
+          let next_page;
+          let prev_page;
+          if (req.query.pagenum) {
+            let hasPage = result[req.query.pagenum.toString()];
+            currentpage = (hasPage) ? hasPage : result['0'];
+            next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
+            prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
           }
+          else {
+            currentpage = result['0'];
+            next_page = result['1'];
+          }
+          return options.protocol.respond(req, res, {
+            data: {
+              [viewmodel.page_plural_count]: result.total,
+              [`${ viewmodel.name }limit`]: req.query.limit,
+              [`${ viewmodel.name }offset`]: req.query.offset,
+              [`${ viewmodel.name }pages`]: result.total_pages,
+              [`${ viewmodel.name }page_current`]: currentpage,
+              [`${ viewmodel.name }page_next`]: next_page,
+              [`${ viewmodel.name }page_prev`]: prev_page,
+              [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
+                if (/^\d+$/.test(key)) pages[key] = result[key];
+                return pages;
+              }, {})
+            }
+          });
+        }, err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
         });
-      }, err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
-      });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
@@ -354,19 +361,31 @@ const PAGINATE = function (options = {}) {
 const LOAD = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   return function (req, res, next) {
-    let fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : undefined;
-    dbAdapter.load({
-      query: req.params.id,
-      fields,
-      population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
-    })
-      .then(result => {
-        req.controllerData[options.model_name] = result;
-        next();
-      }, err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
-      });
+    try {
+      req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
+      let fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : undefined;
+      let docid;
+      if (options.docid && (!req.controllerData.docid && !req.query.docid)) docid = options.docid;
+      else if (req.controllerData.docid) docid = req.controllerData.docid;
+      else if (req.query.docid) docid = req.query.docid; 
+      dbAdapter.load({
+        query: req.params.id,
+        fields,
+        docid,
+        population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
+      })
+        .then(result => {
+          req.controllerData[options.model_name] = result;
+          next();
+        }, err => {
+          options.protocol.error(req, res, { err });
+          next(err);
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      next(err);
+    }
   };
 };
 

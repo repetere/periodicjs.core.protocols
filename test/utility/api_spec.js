@@ -578,6 +578,7 @@ describe('API Utilities', function () {
 		});
 	});
 	describe('Deliver Data', function () {
+		let originalrevision;
 		let db;
 		let responder;
 		let protocol;
@@ -605,6 +606,9 @@ describe('API Utilities', function () {
 						error: () => true,
 						exception: function (req, res, options) {
 							return Promisie.reject(options.err);
+						},
+						respond: function (req, res, options) {
+							return Promisie.resolve(options);
 						}
 					};
 					done();
@@ -640,7 +644,6 @@ describe('API Utilities', function () {
 				expect(createDocument.length).to.equal(2);
 				createDocument()
 					.then(result => {
-						console.log(result);
 						done(new Error('Should not execute'));
 					}, err => {
 						expect(err).to.be.ok;
@@ -648,5 +651,118 @@ describe('API Utilities', function () {
 					});
 			});
 		});
+		describe('API_Adapter PAGINATE utility method', function () {
+			before(done => {
+				let createDocument = API_UTILITY.CREATE({ protocol, model_name: 'example' });
+				let times = 0;
+				Promisie.doWhilst(() => {
+					let body = {
+						contact: Object.assign({}, person.contact)
+					};
+					let yearModifier = Math.ceil(Math.random() * 20);
+					body.contact.dob = moment(body.contact.dob).subtract(yearModifier, 'years').format();
+					return createDocument({ body })
+						.then(() => {
+							return times++;
+						}, e => Promise.reject(e));
+				}, t => t < 5)
+					.then(() => done())
+					.catch(done);
+			});
+			it('Should be able to retrieve paginated data with pre-set options', done => {
+				let paginate = API_UTILITY.PAGINATE({ protocol, model_name: 'example', fields: {contact: 0 }, query: {} });
+				let query = {
+					pagelength: 2,
+					limit: 5
+				};
+				paginate({ query })
+					.try(result => {
+						expect(result).to.have.property('data');
+						expect(result.data).to.have.property('examples');
+						expect(Object.keys(result.data.examples)).to.deep.equal(['0','1','2']);
+						expect(result.data.examplescount).to.equal(5);
+						expect(result.data.examplepage_current.documents[0].toObject().contact).to.not.be.ok;
+						done();
+					})
+					.catch(done);
+			});
+			it('Should be able to retrieve paginated data with dynamic data from request', done => {
+				let paginate = API_UTILITY.PAGINATE({ protocol, model_name: 'example', fields: { _id: 1, createdat: 1 }, query: { 'contact.first_name': 'Hello' } });
+				let query = {
+					pagelength: 2,
+					pagenum: 1,
+					limit: 6
+				};
+				paginate({ query, controllerData: { model_fields: { contact: 1 } } })
+					.try(result => {
+						expect(result).to.have.property('data');
+						expect(result.data).to.have.property('examples');
+						expect(Object.keys(result.data.examples)).to.deep.equal(['0','1','2']);
+						expect(result.data.examplepage_next).to.be.ok;
+						expect(result.data.examplepage_prev).to.be.ok;
+						expect(result.data.examplepage_current.documents[0].toObject()).to.have.property('contact');
+						done();
+					})
+					.catch(done);
+			});
+			it('Should be handle an error', done => {
+				let paginate = API_UTILITY.PAGINATE({ protocol, model_name: 'example', fields: { _id: 1, createdat: 1, contact: 0 }, query: { 'contact.first_name': 'Hello' } });
+				paginate({})
+					.then(() => {
+						done(new Error('Should not execute'));
+					}, e => {
+						expect(e instanceof Error).to.be.true;
+						done();
+					});
+			});
+		});
+		describe('API_Adapter LOAD utility method', function () {
+			let exampleDocument;
+			before(done => {
+				Example.find({})
+					.limit(1)
+					.exec((err, doc) => {
+						if (err) done(err);
+						else {
+							exampleDocument = doc[0].toObject();
+							done();
+						}
+					});
+			});
+			after(done => {
+				originalrevision = exampleDocument;
+				done();
+			});
+			it('Should be able to query for a document given an id', done => {
+				let loadDocument = API_UTILITY.LOAD({ protocol, model_name: 'example' });
+				let params = { id: exampleDocument._id.toString() };
+				let req = { params, query: {} };
+				loadDocument(req, {}, () => {
+					expect(req.controllerData).to.have.property('example');
+					expect(req.controllerData.example._id.toString()).to.equal(exampleDocument._id.toString());
+					done();
+				});
+			});
+			it('Should be able to query for a document given a docid', done => {
+				let loadDocument = API_UTILITY.LOAD({ protocol, model_name: 'example', docid: 'contact.first_name' });
+				let params = { id: 'Hello' };
+				let req = { params, query: {} };
+				loadDocument(req, {}, () => {
+					expect(req.controllerData).to.have.property('example');
+					expect(req.controllerData.example.toObject().contact.first_name).to.equal('Hello');
+					done();
+				});
+			});
+			it('Should handle an error', done => {
+				let loadDocument = API_UTILITY.LOAD({ protocol, model_name: 'example' });
+				let params = { id: 'Hello' };
+				let req = { params };
+				loadDocument(req, {}, (err) => {
+					expect(err instanceof Error).to.be.true;
+					done();
+				});
+			});
+		});
+		
 	});
 });
