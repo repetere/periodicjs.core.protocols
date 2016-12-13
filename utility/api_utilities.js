@@ -250,16 +250,22 @@ const CREATE = function (options = {}) {
 const UPDATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   return function (req, res) {
-    let updateOptions = Object.assign({}, req.body, {
-      id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id']
-    });
-    dbAdapter.update(updateOptions)
-      .then(options.protocol.redirect.bind(options.protocol, req, res, {
-        model_name: `p-admin/${ options.model_name }/edit/`
-      }), err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
+    try {
+      let updateOptions = Object.assign(options, req.body, {
+        id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id']
       });
+      return dbAdapter.update(updateOptions)
+        .then(options.protocol.redirect.bind(options.protocol, req, res, {
+          model_name: `p-admin/${ options.model_name }/edit/`
+        }), err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
@@ -270,7 +276,7 @@ const UPDATE = function (options = {}) {
  * @return {Function} Returns a middleware that ensures that query results are paginated
  */
 const LOAD_WITH_COUNT = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   return function (req, res, next) {
     req.headers[`load${ viewmodel.page_single_count }`] = true;
     next();
@@ -283,7 +289,7 @@ const LOAD_WITH_COUNT = function (options = {}) {
  * @return {Function} Returns a middleware that set default limit and starting page number params on req.query for paginated queries
  */
 const LOAD_WITH_LIMIT = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   return function (req, res, next) {
     req.query.limit = req.query[`${ viewmodel.name_plural }perpage`] || req.query.docsperpage || req.query.limit || req.body[`${ viewmodel.name_plural }perpage`] || req.body.docsperpage || req.body.limit || 15;
     req.query.pagenum = ((req.query.pagenum && req.query.pagenum > 0) || (req.body.pagenum && req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;

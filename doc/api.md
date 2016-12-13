@@ -4,11 +4,11 @@
 <dt><a href="#HTTP_ADAPTER">HTTP_ADAPTER</a> : <code>HTTP_Adapter</code></dt>
 <dd><p>A protocol adapter for HTTP requests and responses</p>
 </dd>
-<dt><a href="#PROTOCOL_ADAPTER_INTERFACE">PROTOCOL_ADAPTER_INTERFACE</a></dt>
-<dd></dd>
 <dt><a href="#REST_ADAPTER">REST_ADAPTER</a> : <code>REST_Adapter</code></dt>
 <dd><p>An API adapter for RESTful API&#39;s. REST_Adapter handles standing up a standard set of RESTful routes and middleware</p>
 </dd>
+<dt><a href="#PROTOCOL_ADAPTER_INTERFACE">PROTOCOL_ADAPTER_INTERFACE</a></dt>
+<dd></dd>
 </dl>
 
 ## Functions
@@ -193,38 +193,6 @@ Convenience method for accessing .implement method on API adapter. Also handles 
 | options | <code>Object</code> | Configurable options for implementing controllers and routers. See API adapter .implement method for more details |
 | options.model_name | <code>string</code> &#124; <code>Array.&lt;string&gt;</code> | An array of model names or a single model name that should have controllers and routes implemented |
 
-<a name="PROTOCOL_ADAPTER_INTERFACE"></a>
-
-## PROTOCOL_ADAPTER_INTERFACE
-**Kind**: global class  
-
-* [PROTOCOL_ADAPTER_INTERFACE](#PROTOCOL_ADAPTER_INTERFACE)
-    * [new PROTOCOL_ADAPTER_INTERFACE([options])](#new_PROTOCOL_ADAPTER_INTERFACE_new)
-    * [.create([options])](#PROTOCOL_ADAPTER_INTERFACE+create) ⇒ <code>Object</code>
-
-<a name="new_PROTOCOL_ADAPTER_INTERFACE_new"></a>
-
-### new PROTOCOL_ADAPTER_INTERFACE([options])
-Creates an interface
-
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [options] | <code>Object</code> | <code>{}</code> | A set of properties defined by keys with their allowed types as values. Each property will be required by newly constructed classes from this interface |
-
-<a name="PROTOCOL_ADAPTER_INTERFACE+create"></a>
-
-### protocoL_ADAPTER_INTERFACE.create([options]) ⇒ <code>Object</code>
-Constructs a new object with a prototype defined by the .adapter ensuring that instantiated class conforms to interface requirements
-
-**Kind**: instance method of <code>[PROTOCOL_ADAPTER_INTERFACE](#PROTOCOL_ADAPTER_INTERFACE)</code>  
-**Returns**: <code>Object</code> - Returns an instantiated adapter class  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [options] | <code>Object</code> | <code>{}</code> | Values to be passed to class constructor (.adapter should be reserved for either customer class or string that matches key in ADAPTERS) |
-| options.adapter | <code>string</code> &#124; <code>function</code> |  | Required to specify type of adapter to be constructed or a class constructor that can be instantiated with new keyword |
-
 <a name="REST_ADAPTER"></a>
 
 ## REST_ADAPTER : <code>REST_Adapter</code>
@@ -284,6 +252,38 @@ Convenience method for generting controller functions and routes for a given mod
 | options | <code>Object</code> | Configurable options for implementing controller functions and routes for a model |
 | options.model_name | <code>string</code> | The name of the model that the controller functions are being generated for |
 | options.router | <code>Object</code> | An express router that routes should be mounted on |
+
+<a name="PROTOCOL_ADAPTER_INTERFACE"></a>
+
+## PROTOCOL_ADAPTER_INTERFACE
+**Kind**: global class  
+
+* [PROTOCOL_ADAPTER_INTERFACE](#PROTOCOL_ADAPTER_INTERFACE)
+    * [new PROTOCOL_ADAPTER_INTERFACE([options])](#new_PROTOCOL_ADAPTER_INTERFACE_new)
+    * [.create([options])](#PROTOCOL_ADAPTER_INTERFACE+create) ⇒ <code>Object</code>
+
+<a name="new_PROTOCOL_ADAPTER_INTERFACE_new"></a>
+
+### new PROTOCOL_ADAPTER_INTERFACE([options])
+Creates an interface
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [options] | <code>Object</code> | <code>{}</code> | A set of properties defined by keys with their allowed types as values. Each property will be required by newly constructed classes from this interface |
+
+<a name="PROTOCOL_ADAPTER_INTERFACE+create"></a>
+
+### protocoL_ADAPTER_INTERFACE.create([options]) ⇒ <code>Object</code>
+Constructs a new object with a prototype defined by the .adapter ensuring that instantiated class conforms to interface requirements
+
+**Kind**: instance method of <code>[PROTOCOL_ADAPTER_INTERFACE](#PROTOCOL_ADAPTER_INTERFACE)</code>  
+**Returns**: <code>Object</code> - Returns an instantiated adapter class  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [options] | <code>Object</code> | <code>{}</code> | Values to be passed to class constructor (.adapter should be reserved for either customer class or string that matches key in ADAPTERS) |
+| options.adapter | <code>string</code> &#124; <code>function</code> |  | Required to specify type of adapter to be constructed or a class constructor that can be instantiated with new keyword |
 
 <a name="generateErrorDetails"></a>
 
@@ -379,6 +379,7 @@ Generates middleware that will render the "new" view
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for "new" view rendering |
 | [options.use_plural_view_name] | <code>Boolean</code> | If true the plural value of the model name will be used in the view |
+| options.template_ext | <code>string</code> | Used in specifying a custom file extension for view files |
 | options.model_name | <code>string</code> | Name of the model that the view middleware is being generated for |
 
 <a name="SHOW"></a>
@@ -393,6 +394,7 @@ Generates middleware that will render the "show" view
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for "show" view rendering |
 | [options.use_plural_view_name] | <code>Boolean</code> | If true the plural value of the model name will be used in the view |
+| options.template_ext | <code>string</code> | Used in specifying a custom file extension for view files |
 | options.model_name | <code>string</code> | Name of the model that the view middleware is being generated for |
 
 <a name="EDIT"></a>
@@ -407,6 +409,7 @@ Generates middleware that will render the "edit" view
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for "edit" view rendering |
 | [options.use_plural_view_name] | <code>Boolean</code> | If true the plural value of the model name will be used in the view |
+| options.template_ext | <code>string</code> | Used in specifying a custom file extension for view files |
 | options.model_name | <code>string</code> | Name of the model that the view middleware is being generated for |
 
 <a name="INDEX"></a>
@@ -421,6 +424,7 @@ Generates middleware that will render the "index" view
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for "index" view rendering |
 | [options.use_plural_view_name] | <code>Boolean</code> | If true the plural value of the model name will be used in the view |
+| options.template_ext | <code>string</code> | Used in specifying a custom file extension for view files |
 | options.model_name | <code>string</code> | Name of the model that the view middleware is being generated for |
 
 <a name="REMOVE"></a>
@@ -449,6 +453,7 @@ Generates middleware that handles rendering a view from paginated data
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for querying middleware |
 | [options.use_plural_view_name] | <code>Boolean</code> | If true the plural value of the model name will be used in the view |
+| options.template_ext | <code>string</code> | Used in specifying a custom file extension for view files |
 | options.model_name | <code>string</code> | Name of the model that the view middleware is being generated for |
 
 <a name="CREATE"></a>

@@ -763,6 +763,86 @@ describe('API Utilities', function () {
 				});
 			});
 		});
-		
+		describe('API_Adapter LOAD_WITH_COUNT utility method', function () {
+			it('Should set a load with count header on the request object', done => {
+				let middleware = API_UTILITY.LOAD_WITH_COUNT({ model_name: 'example' });
+				let req = { headers: {} };
+				middleware(req, {}, () => {
+					expect(req.headers).to.have.property('loadexamplecount');
+					done();
+				});
+			});
+		});
+		describe('API_Adapter LOAD_WITH_LIMIT utility method', function () {
+			it('Should set a load with limit query param on the request object', done => {
+				let middleware = API_UTILITY.LOAD_WITH_LIMIT({ model_name: 'example' });
+				let req = { query: {}, body: {} };
+				req.body.limit = 10;
+				req.body.pagenum = 2;
+				middleware(req, {}, () => {
+					expect(req.query).to.have.property('limit');
+					expect(req.query).to.have.property('pagenum');
+					done();
+				});
+			});
+		});
+		describe('API_Adapter UPDATE utility method', function () {
+			it('Should be able to update a document', done => {
+				let updateDocument = API_UTILITY.UPDATE({ model_name: 'example', protocol });
+				let updatedoc = Object.assign({}, originalrevision);
+				updatedoc.contact = Object.assign({}, updatedoc.contact, { first_name: 'Foo' });
+				updateDocument({
+					body: {
+						updatedoc,
+						originalrevision
+					},
+					params: updatedoc._id
+				})
+					.try(result => {
+						expect(result).to.have.property('model_name');
+						expect(result.model_name).to.equal('p-admin/example/edit/');
+						originalrevision = updatedoc;
+						done();
+					})
+					.catch(done);
+			});
+			it('Should be able to do a patch update', done => {
+				let updateDocument = API_UTILITY.UPDATE({ model_name: 'example', protocol });
+				updateDocument({
+					body: {
+						originalrevision,
+						updatedoc: {
+							contact: { last_name: 'Bar' }
+						},
+						isPatch: true
+					},
+					params: originalrevision._id
+				})
+					.try(result => {
+						expect(result).to.have.property('model_name');
+						expect(result.model_name).to.equal('p-admin/example/edit/');
+						return Promisie.promisify(Example.findById, Example)(originalrevision._id);
+					})
+					.try(result => {
+						result = result.toObject();
+						expect(result).to.have.property('createdat');
+						expect(result).to.have.property('updatedat');
+						expect(result.contact.first_name).to.equal('Foo');
+						expect(result.contact.last_name).to.equal('Bar');
+						done();
+					})
+					.catch(done);
+			});
+			it('Should handle an error', done => {
+				let updateDocument = API_UTILITY.UPDATE({ model_name: 'example', protocol });
+				updateDocument()
+					.then(() => {
+						done(new Error('Should not execute'));
+					}, e => {
+						expect(e instanceof Error).to.be.true;
+						done();
+					});
+			});
+		});
 	});
 });
