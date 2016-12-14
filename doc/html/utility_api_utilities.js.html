@@ -62,7 +62,7 @@ var composeMiddleware = function (options = {}) {
     else {
       return render(data, options)
         .then(responder_override => {
-          return options.protocol.respond(req, res, { responder_override });
+          return options.protocol.respond(req, res, Object.assign({}, options, { responder_override }));
         })
         .catch(err => {
           options.protocol.error(req, res, { err });
@@ -77,11 +77,11 @@ var composeMiddleware = function (options = {}) {
  * @param {string} model_name String value that should be inflected
  * @return {Object} Returns an object containing inflected string values
  */
-var setViewModelProperties = function (model_name) {
+var setViewModelProperties = function (options) {
   let viewmodel;
-  if (active_model.label !== model_name || !active_model.expanded_names) {
-    viewmodel = expand_names(model_name);
-    active_model.label = model_name;
+  if (active_model.label !== options.model_name || !active_model.expanded_names) {
+    viewmodel = expand_names(options);
+    active_model.label = options.model_name;
     active_model.expanded_names = viewmodel;
   }
   else viewmodel = active_model.expanded_names;
@@ -135,7 +135,11 @@ const SHOW = function (options = {}) {
     },
     model_name
   });
-  return composeMiddleware(middleware_options);
+  let composed = composeMiddleware(middleware_options);
+  return function (req, res) {
+    if (req.query &amp;&amp; req.query.format &amp;&amp; /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    return composed(req, res);
+  };
 };
 
 /**
@@ -189,7 +193,11 @@ const INDEX = function (options = {}) {
     },
     model_name
   });
-  return composeMiddleware(middleware_options);
+  let composed = composeMiddleware(middleware_options);
+  return function (req, res) {
+    if (req.query &amp;&amp; req.query.format &amp;&amp; /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    return composed(req, res);
+  };
 };
 
 /**
@@ -200,16 +208,22 @@ const INDEX = function (options = {}) {
  * @return {Function} Returns middleware that handles deleting items
  */
 const REMOVE = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db[viewmodel.name_plural];
   return function (req, res) {
-    let removeDocument = req.controllerData[viewmodel.name];
-    return dbAdapter.delete({ deleteid: removeDocument._id || removeDocument[dbAdapter.docid] })
-      .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
-      });
+    try {
+      let removeDocument = req.controllerData[viewmodel.name];
+      return dbAdapter.delete({ deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid] })
+        .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
@@ -278,16 +292,22 @@ const CREATE = function (options = {}) {
 const UPDATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   return function (req, res) {
-    let updateOptions = Object.assign({}, req.body, {
-      id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id']
-    });
-    dbAdapter.update(updateOptions)
-      .then(options.protocol.redirect.bind(options.protocol, req, res, {
-        model_name: `p-admin/${ options.model_name }/edit/`
-      }), err => {
-        options.protocol.error(req, res, { err });
-        options.protocol.exception(req, res, { err });
+    try {
+      let updateOptions = Object.assign(options, req.body, {
+        id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id']
       });
+      return dbAdapter.update(updateOptions)
+        .then(options.protocol.redirect.bind(options.protocol, req, res, {
+          model_name: `p-admin/${ options.model_name }/edit/`
+        }), err => {
+          options.protocol.error(req, res, { err });
+          return options.protocol.exception(req, res, { err });
+        });
+    }
+    catch (err) {
+      options.protocol.error(req, res, { err });
+      return options.protocol.exception(req, res, { err });
+    }
   };
 };
 
@@ -298,7 +318,7 @@ const UPDATE = function (options = {}) {
  * @return {Function} Returns a middleware that ensures that query results are paginated
  */
 const LOAD_WITH_COUNT = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   return function (req, res, next) {
     req.headers[`load${ viewmodel.page_single_count }`] = true;
     next();
@@ -311,7 +331,7 @@ const LOAD_WITH_COUNT = function (options = {}) {
  * @return {Function} Returns a middleware that set default limit and starting page number params on req.query for paginated queries
  */
 const LOAD_WITH_LIMIT = function (options = {}) {
-  let viewmodel = setViewModelProperties(options.model_name);
+  let viewmodel = setViewModelProperties(options);
   return function (req, res, next) {
     req.query.limit = req.query[`${ viewmodel.name_plural }perpage`] || req.query.docsperpage || req.query.limit || req.body[`${ viewmodel.name_plural }perpage`] || req.body.docsperpage || req.body.limit || 15;
     req.query.pagenum = ((req.query.pagenum &amp;&amp; req.query.pagenum > 0) || (req.body.pagenum &amp;&amp; req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;
@@ -331,7 +351,7 @@ const LOAD_WITH_LIMIT = function (options = {}) {
 const PAGINATE = function (options = {}) {
   let dbAdapter = options.protocol.db[options.model_name];
   let viewmodel = setViewModelProperties(options);
-  return function (req, res) {
+  return function (req, res, next) {
     try {
       req.controllerData = (req.controllerData &amp;&amp; typeof req.controllerData === 'object') ? req.controllerData : {};
       let query = (req.controllerData &amp;&amp; req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
@@ -353,21 +373,24 @@ const PAGINATE = function (options = {}) {
             currentpage = result['0'];
             next_page = result['1'];
           }
-          return options.protocol.respond(req, res, {
-            data: {
-              [viewmodel.page_plural_count]: result.total,
-              [`${ viewmodel.name }limit`]: req.query.limit,
-              [`${ viewmodel.name }offset`]: req.query.offset,
-              [`${ viewmodel.name }pages`]: result.total_pages,
-              [`${ viewmodel.name }page_current`]: currentpage,
-              [`${ viewmodel.name }page_next`]: next_page,
-              [`${ viewmodel.name }page_prev`]: prev_page,
-              [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
-                if (/^\d+$/.test(key)) pages[key] = result[key];
-                return pages;
-              }, {})
-            }
-          });
+          let data = {
+            [viewmodel.page_plural_count]: result.total,
+            [`${ viewmodel.name }limit`]: req.query.limit,
+            [`${ viewmodel.name }offset`]: req.query.offset,
+            [`${ viewmodel.name }pages`]: result.total_pages,
+            [`${ viewmodel.name }page_current`]: currentpage,
+            [`${ viewmodel.name }page_next`]: next_page,
+            [`${ viewmodel.name }page_prev`]: prev_page,
+            [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
+              if (/^\d+$/.test(key)) pages[key] = result[key];
+              return pages;
+            }, {})
+          };
+          if (req.query &amp;&amp; req.query.format &amp;&amp; /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data }));
+          else {
+            req.controllerData[viewmodel.name_plural] = data;
+            next();
+          }
         }, err => {
           options.protocol.error(req, res, { err });
           return options.protocol.exception(req, res, { err });
@@ -437,7 +460,7 @@ module.exports = (function () {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Dec 13 2016 11:37:48 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Dec 14 2016 11:41:56 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>
