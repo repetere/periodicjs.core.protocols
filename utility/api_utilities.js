@@ -49,11 +49,11 @@ var composeMiddleware = function (options = {}) {
  * @param {string} model_name String value that should be inflected
  * @return {Object} Returns an object containing inflected string values
  */
-var setViewModelProperties = function (model_name) {
+var setViewModelProperties = function (options) {
   let viewmodel;
-  if (active_model.label !== model_name || !active_model.expanded_names) {
-    viewmodel = expand_names(model_name);
-    active_model.label = model_name;
+  if (active_model.label !== options.model_name || !active_model.expanded_names) {
+    viewmodel = expand_names(options);
+    active_model.label = options.model_name;
     active_model.expanded_names = viewmodel;
   }
   else viewmodel = active_model.expanded_names;
