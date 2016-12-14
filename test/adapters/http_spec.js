@@ -164,7 +164,7 @@ describe('HTTP_Adapter', function () {
 		});
 		it('Should be able to load a document with a GET request', done => {
 			Promisie.promisify(request.get, request)({
-				url: `http://localhost:3001/examples/${ exampleDocument._id }?json=true`
+				url: `http://localhost:3001/examples/${ exampleDocument._id }?format=json`
 			})
 				.try(result => {
 					let body = JSON.parse(result.body);
@@ -194,7 +194,7 @@ describe('HTTP_Adapter', function () {
 		});
 		it('Should be able to multiple documents with a GET request', done => {
 			Promisie.promisify(request.get, request)({
-				url: 'http://localhost:3001/examples?json=true'
+				url: 'http://localhost:3001/examples?format=json'
 			})
 				.try(result => {
 					let body = JSON.parse(result.body);
@@ -204,6 +204,25 @@ describe('HTTP_Adapter', function () {
 					expect(body.data).to.have.property('examplepages');
 					expect(body.data).to.have.property('examplepage_current');
 					expect(body.data).to.have.property('examples');
+					expect(body.data).to.have.property('request');
+					done();
+				})
+				.catch(done);
+		});
+		it('Should not append on request details if .skip_default_props option is true', done => {
+			let result = Adapter.api.implement({
+				router: express.Router(),
+				model_name: 'example',
+				skip_default_props: true
+			});
+			Adapter.express.use('/v1', result.router);
+			Promisie.promisify(request.get, request)({
+				url: 'http://localhost:3001/v1/examples?format=json'
+			})
+				.try(result => {
+					let body = JSON.parse(result.body);
+					expect(body.result).to.equal('success');
+					expect(body.data).to.not.have.property('request');
 					done();
 				})
 				.catch(done);
@@ -248,7 +267,7 @@ describe('HTTP_Adapter', function () {
 			let testError = new Error('Test Error');
 			console.error = spy;
 			Adapter.error(null, null, { err: testError });
-			expect(spy).to.have.been.called;
+			expect(spy).to.have.been.called();
 			expect(spy).to.have.been.called.with({ err: testError });
 			console.error = original;
 		});
@@ -258,9 +277,63 @@ describe('HTTP_Adapter', function () {
 			let testError = new Error('Test Error');
 			console.warn = spy;
 			Adapter.warn(null, null, { err: testError });
-			expect(spy).to.have.been.called;
+			expect(spy).to.have.been.called();
 			expect(spy).to.have.been.called.with({ err: testError });
 			console.warn = original;
+		});
+		describe('exception handling', function () {
+			it('Should respect custom exception messages', () => {
+				Adapter.config = Object.assign(Adapter.config, { exception_message: 'Hello World' });
+				let req = {};
+				let res = {};
+				let holder = {};
+				res.status = function (code) {
+					return this;
+				}.bind(res);
+				res.render = function (viewpath, data) {
+					holder = arguments;
+					return this;
+				}.bind(res);
+				Adapter.exception(req, res);
+				expect(holder['1'].message).to.equal('Hello World');
+			});
+			it('Should use error message if error is provided and render view', () => {
+				Adapter.config = Object.assign(Adapter.config, { exception_message: null });
+				let req = {};
+				let res = {};
+				let holder = {};
+				res.status = function (code) {
+					return this;
+				}.bind(res);
+				let render = function (viewpath, data) {
+					holder = arguments;
+					return this;
+				}.bind(res);
+				let spy = chai.spy(render);
+				res.render = spy;
+				Adapter.exception(req, res, { err: new Error('Test Error') });
+				expect(spy).to.have.been.called.with('home/error500');
+				expect(holder).to.have.property('1');
+				expect(holder['1'].message).to.equal('Test Error');
+			});
+			it('Should send JSON response if req.xhr is true', () => {
+				let req = { xhr: true };
+				let res = {};
+				let holder = {};
+				res.status = function (code) {
+					return this;
+				}.bind(res);
+				let send = function (viewpath, data) {
+					holder = arguments;
+					return this;
+				}.bind(res);
+				let spy = chai.spy(send);
+				res.send = spy;
+				Adapter.exception(req, res);
+				expect(spy).to.have.been.called();
+				expect(holder).to.have.property('0');
+				expect(holder['0'].data.error).to.equal('something blew up!');
+			});
 		});
 	});
 });

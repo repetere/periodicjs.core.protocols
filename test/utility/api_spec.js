@@ -677,7 +677,7 @@ describe('API Utilities', function () {
 				let query = {
 					pagelength: 2,
 					limit: 5,
-					json: true
+					format: 'json'
 				};
 				paginate({ query })
 					.try(result => {
@@ -696,7 +696,7 @@ describe('API Utilities', function () {
 					pagelength: 2,
 					pagenum: 1,
 					limit: 6,
-					json: true
+					format: 'json'
 				};
 				paginate({ query, controllerData: { model_fields: { contact: 1 } } })
 					.try(result => {

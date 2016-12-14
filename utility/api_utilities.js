@@ -34,7 +34,7 @@ var composeMiddleware = function (options = {}) {
     else {
       return render(data, options)
         .then(responder_override => {
-          return options.protocol.respond(req, res, { responder_override });
+          return options.protocol.respond(req, res, Object.assign({}, options, { responder_override }));
         })
         .catch(err => {
           options.protocol.error(req, res, { err });
@@ -109,7 +109,7 @@ const SHOW = function (options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function (req, res) {
-    if (req.query && req.query.json) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
     return composed(req, res);
   };
 };
@@ -167,7 +167,7 @@ const INDEX = function (options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function (req, res) {
-    if (req.query && req.query.json) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
     return composed(req, res);
   };
 };
@@ -358,7 +358,7 @@ const PAGINATE = function (options = {}) {
               return pages;
             }, {})
           };
-          if (req.query && req.query.json) return options.protocol.respond(req, res, { data });
+          if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data }));
           else {
             req.controllerData[viewmodel.name_plural] = data;
             next();

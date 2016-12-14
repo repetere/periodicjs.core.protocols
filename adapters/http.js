@@ -155,7 +155,7 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 			else res.status(200).send(responder_override);
 		}
 		else {
-			responder((err) ? err : ((options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), options)
+			responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), options)
 				.try(result => {
 					if (req.query.callback) res.status((err) ? 500 : 200).jsonp(result);
 					else res.status((err) ? 500 : 200).send(result);
