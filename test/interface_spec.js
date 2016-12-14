@@ -32,6 +32,10 @@ describe('Protocol Adapter Interface', function () {
 			let adapter = AdapterInterface.create({ adapter: 'http', api: 'rest' });
 			expect(adapter instanceof HTTPAdapter).to.be.true;
 		});
+		it('Should return a constructed adapter if only .protocol is defined and api type is provided', () => {
+			let adapter = AdapterInterface.create({ protocol: 'http', api: 'rest' });
+			expect(adapter instanceof HTTPAdapter).to.be.true;
+		});
 	});
 	describe('generating an adapter from a provided constructor', function () {
 		it('Should throw an error if custom adapter class is missing required methods', done => {

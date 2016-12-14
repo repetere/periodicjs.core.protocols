@@ -73,7 +73,60 @@ Server.use('/api/v1', router);
   DELETE localhost:3000/api/v1/example/:id?format=json => Remove One
  */
 ```
+### adapter.implement vs. adapter.api.implement
+```javascript
+//In this example we are again assuming that mongo is connected and the server is started
+let http_adapter = ProtocolInterface.create({
+  express: Server, //Instead of the running server provide the express module
+  resources: {},
+  db: {
+    example: DBInterface.create({ adapter: 'mongo', model: Example })
+  },
+  responder: ResponderInterface.create({ adapter: 'json' }),
+  api: 'rest',
+  adapter: 'http'
+});
+/*
+  There are two implement methods exposed by this constructed object the first is accessed by .implement and is a method for both implementing an API strategy and mounting whatever is generated from the implementation.
+ */
+http_adapter.implement();
+/*
+  This method has two potential outcomes dependent on if the http_adapter.express property is an already running express server or the express module itself. Another key difference is that this .implement method only uses the .express property of the protocol adapter.
+  Case 1 (express server):
+    .implement() directly mounts routes on the application
+    sets the .router property equal to the ._router property of the express application
+  Case 2 (express module):
+    .implement() creates an express router and mounts routes
+    sets the .router property equal to the generated router
+    must separately mount router to application main router
+  Both
+    defines http_adapter.controller[model_name] as the generated controller methods for model
+ */
+let router = http_adapter.api.implement({ model_name: 'example' });
+/*
+  This method is similar to http_adapter.implement with the key difference being that it implements an API strategy given any router and model and returns the values so that they can be used outside of the ecosystem of the protocol adapter. As such this method can be passed an optional .router property and will mount routes on the provided router. Only when this option is not defined will this method use the http_adapter.express router. 
 
+  Optionally .router can also be set to false in which case no router will be created and only controller methods are returned.
+ */
+console.log(router); 
+/*
+  {
+    new,
+    show,
+    edit,
+    index,
+    remove,
+    search,
+    create,
+    update,
+    load,
+    load_with_count,
+    load_with_limit,
+    paginate,
+    router <- When options.router is not false
+  }
+*/
+```
 ### Development
 *Make sure you have grunt installed*
 ```sh

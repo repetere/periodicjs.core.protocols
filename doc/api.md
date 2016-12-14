@@ -284,6 +284,7 @@ Constructs a new object with a prototype defined by the .adapter ensuring that i
 | --- | --- | --- | --- |
 | [options] | <code>Object</code> | <code>{}</code> | Values to be passed to class constructor (.adapter should be reserved for either customer class or string that matches key in ADAPTERS) |
 | options.adapter | <code>string</code> &#124; <code>function</code> |  | Required to specify type of adapter to be constructed or a class constructor that can be instantiated with new keyword |
+| options.protocol | <code>string</code> &#124; <code>function</code> |  | Alias for options.adapter. If set options.adapter will be ignored |
 
 <a name="generateErrorDetails"></a>
 
