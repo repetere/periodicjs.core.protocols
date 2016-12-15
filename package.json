@@ -17,13 +17,13 @@
     }
   ],
   "dependencies": {
+    "capitalize": "^1.0.0",
     "periodicjs.core.responder": "~0.0.6",
     "pluralize": "~1.1.2"
   },
   "description": "Customizable CMS platform",
   "devDependencies": {
     "body-parser": "^1.15.2",
-    "capitalize": "^1.0.0",
     "chai": "~3.0.0",
     "chai-spies": "^0.7.1",
     "coveralls": "^2.11.15",
@@ -93,6 +93,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.0.5",
+  "version": "0.0.6",
   "license": "MIT"
 }
