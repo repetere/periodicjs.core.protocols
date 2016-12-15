@@ -266,7 +266,8 @@ const UPDATE = function (options = {}) {
   return function (req, res) {
     try {
       let updateOptions = Object.assign(options, req.body, {
-        id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id']
+        id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id'],
+        track_changes: (req.saverevision === true) ? true : undefined
       });
       return dbAdapter.update(updateOptions)
         .then(options.protocol.redirect.bind(options.protocol, req, res, {
