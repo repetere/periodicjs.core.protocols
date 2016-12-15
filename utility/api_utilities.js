@@ -415,5 +415,5 @@ const LOAD = function (options = {}) {
 
 module.exports = (function () {
   view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs' });
-  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, setViewModelProperties };
+  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, setViewModelProperties, view_adapter };
 })();

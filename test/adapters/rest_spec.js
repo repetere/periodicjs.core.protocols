@@ -83,6 +83,9 @@ describe('REST_Adapter', function () {
 		it('Should have a .routing and .implement method', () => {
 			expect(Adapter.routing).to.be.a('function');
 			expect(Adapter.implement).to.be.a('function');
+			expect(Adapter).to.have.property('_default_');
+			console.log(Adapter._default_.constructor);
+			expect(/HTML_Adapter/.test(Adapter._default_.constructor)).to.be.true;
 		});
 	});
 	describe('.implement method', function () {

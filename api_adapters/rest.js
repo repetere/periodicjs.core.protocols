@@ -51,6 +51,11 @@ const REST_ADAPTER = class REST_Adapter {
 	 */
 	constructor (protocol_adapter) {
 		this.protocol = protocol_adapter;
+		Object.defineProperty(this, '_default_', {
+			writable: false,
+			configurable: false,
+			value: API_UTILITIES.view_adapter
+		});
 	}
 	/**
 	 * Appends RESTful routes to an express router
