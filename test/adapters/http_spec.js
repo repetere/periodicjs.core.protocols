@@ -141,6 +141,32 @@ describe('HTTP_Adapter', function () {
 				.catch(done);
 		});
 	});
+	describe('.respond method with options.return_response_data true', function () {
+		it('Should return back response data and not send response', done => {
+			let req = {
+				query: {},
+				params: {},
+				baseUrl: 'test',
+				headers: {},
+				connection: {}
+			};
+			let res = {};
+			res.status = chai.spy(function (num) {
+				return res;
+			});
+			Adapter.respond(req, res, {
+				data: { foo: 'bar' },
+				return_response_data: true
+			})
+				.try(result => {
+					expect(result).to.have.property('result')
+					expect(result.result).to.equal('success');
+					expect(res.status).to.not.have.been.called();
+					done();
+				})
+				.catch(done);
+		});
+	});
 	describe('making requests to implemented routes', function () {
 		let exampleDocument;
 		it('Should be able to create a document with a POST request', done => {

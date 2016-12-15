@@ -139,6 +139,7 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 	 * @param  {Object} res     Express response object
 	 * @param  {Object} [options={}] Configurable options for response
 	 * @param {Boolean} options.ignore_error If true error will be treated like a normal response
+	 * @param {Boolean} options.return_response_data If true respond will not send HTTP response and will instead return rendered data
 	 * @param {*} options.responder_override Data to send in response. If this value is defined A success response will always be set and all formatting rules will be ignored
 	 * @param {Boolean} options.skip_default_props If true request details will not be appended to success response
 	 * @param {Object} options.err An error to send in response. If this value is set an error response will be generated unless options.ignore_error is true
@@ -155,12 +156,16 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 			else res.status(200).send(responder_override);
 		}
 		else {
-			responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), options)
+			return responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), options)
 				.try(result => {
-					if (req.query.callback) res.status((err) ? 500 : 200).jsonp(result);
-					else res.status((err) ? 500 : 200).send(result);
+					if (options.return_response_data === true) return result;
+					else {
+						if (req.query.callback) res.status((err) ? 500 : 200).jsonp(result);
+						else res.status((err) ? 500 : 200).send(result);
+					}
 				})
 				.catch(err => {
+					if (options.return_response_data === true) return Promise.reject(err);
 					this.exception(req, res, Object.assign({}, options, { err }));
 				});
 		}

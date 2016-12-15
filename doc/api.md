@@ -160,6 +160,7 @@ Handles sending the response to a request by rendering data according to this.re
 | res | <code>Object</code> |  | Express response object |
 | [options] | <code>Object</code> | <code>{}</code> | Configurable options for response |
 | options.ignore_error | <code>Boolean</code> |  | If true error will be treated like a normal response |
+| options.return_response_data | <code>Boolean</code> |  | If true respond will not send HTTP response and will instead return rendered data |
 | options.responder_override | <code>\*</code> |  | Data to send in response. If this value is defined A success response will always be set and all formatting rules will be ignored |
 | options.skip_default_props | <code>Boolean</code> |  | If true request details will not be appended to success response |
 | options.err | <code>Object</code> |  | An error to send in response. If this value is set an error response will be generated unless options.ignore_error is true |
