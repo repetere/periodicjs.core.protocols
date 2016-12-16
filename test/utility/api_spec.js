@@ -12,6 +12,8 @@ const expect = chai.expect;
 const UTILITY = require(path.join(__dirname, '../../utility/index'));
 const API_UTILITY = UTILITY.api;
 
+chai.use(require('chai-spies'));
+
 var Example;
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
@@ -612,6 +614,11 @@ describe('API Utilities', function () {
 						},
 						respond: function (req, res, options) {
 							return Promisie.resolve(options);
+						},
+						settings: {
+							application: {
+								environment: 'test'
+							}
 						}
 					};
 					done();
@@ -845,6 +852,47 @@ describe('API Utilities', function () {
 						done(new Error('Should not execute'));
 					}, e => {
 						expect(e instanceof Error).to.be.true;
+						done();
+					});
+			});
+		});
+		describe('API_Adapter CLI utility method', function () {
+			let info = console.info.bind(console);
+			let silly = console.log.bind(console);
+			before(() => {
+				console.info = chai.spy(info);
+				console.silly = chai.spy(silly);
+			});
+			after(() => {
+				delete console.silly;
+				console.info = info;
+			});
+			it('Should be able to query for a document', done => {
+				let _protocol = Object.assign({}, protocol, {
+					logger: console,
+					docid: 'contact.first_name'
+				});
+				let queryDocument = API_UTILITY.CLI({ model_name: 'example', protocol: _protocol });
+				queryDocument({ search: '' })
+					.try(result => {
+						expect(result).to.be.ok;
+						expect(console.silly).to.have.been.called.with('got docs');
+						expect(console.info).to.have.been.called.with(result);
+						done();
+					})
+					.catch(done);
+			});
+			it('Should identify task as invalid', done => {
+				let _protocol = Object.assign({}, protocol, {
+					logger: console,
+					docid: 'contact.first_name'
+				});
+				let queryDocument = API_UTILITY.CLI({ model_name: 'example', protocol: _protocol }); 
+				queryDocument({ kill: 'all' })
+					.then(() => {
+						done(new Error('Should not execute'));
+					}, e => {
+						expect(console.silly).to.have.been.called.with('invalid task');
 						done();
 					});
 			});

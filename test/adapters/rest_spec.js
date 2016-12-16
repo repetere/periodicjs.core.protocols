@@ -80,12 +80,12 @@ describe('REST_Adapter', function () {
 			Adapter = new REST_Adapter(protocol);
 			done();
 		});
-		it('Should have a .routing and .implement method', () => {
+		it('Should have a .routing and .implement method and have a .initialize property', () => {
 			expect(Adapter.routing).to.be.a('function');
 			expect(Adapter.implement).to.be.a('function');
-			expect(Adapter).to.have.property('_default_');
-			console.log(Adapter._default_.constructor);
-			expect(/HTML_Adapter/.test(Adapter._default_.constructor)).to.be.true;
+			expect(Adapter.initialize).to.be.an('object');
+			expect(Adapter.initialize.hasOwnProperty('LOAD')).to.be.false;
+			expect(Adapter.initialize.LOAD).to.be.a('function');
 		});
 	});
 	describe('.implement method', function () {

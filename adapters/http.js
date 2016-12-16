@@ -76,6 +76,7 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 		this.resources = options.resources || {};
 		this.api = new API_ADAPTERS[options.api](this, options);
 		this.logger = options.logger || console;
+		this.utilities = options.utilities || {};
 	}
 	/**
 	 * Handles logging errors

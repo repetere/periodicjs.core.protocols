@@ -65,6 +65,9 @@
 <dt><a href="#LOAD">LOAD(options)</a> ⇒ <code>function</code></dt>
 <dd><p>Generates middleware that handles querying for a single populated item</p>
 </dd>
+<dt><a href="#CLI">CLI(options)</a> ⇒ <code>function</code></dt>
+<dd><p>Generates a function that handles CLI inputs for queries</p>
+</dd>
 </dl>
 
 <a name="HTTP_ADAPTER"></a>
@@ -538,5 +541,18 @@ Generates middleware that handles querying for a single populated item
 | Param | Type | Description |
 | --- | --- | --- |
 | options | <code>Object</code> | Configurable options for load middleware |
+| options.protocol | <code>Object</code> | A protocol adapter with a defined db property containing database adapters indexed by model name |
+
+<a name="CLI"></a>
+
+## CLI(options) ⇒ <code>function</code>
+Generates a function that handles CLI inputs for queries
+
+**Kind**: global function  
+**Returns**: <code>function</code> - Returns a function that handles CLI inputs for queries and writes result to process stdout  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| options | <code>Object</code> | Configurable options for CLI handler |
 | options.protocol | <code>Object</code> | A protocol adapter with a defined db property containing database adapters indexed by model name |
 

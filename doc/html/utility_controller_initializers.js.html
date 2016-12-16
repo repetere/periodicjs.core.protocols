@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: utility/expand_names.js</title>
+    <title>JSDoc: Source: utility/controller_initializers.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: utility/expand_names.js</h1>
+    <h1 class="page-title">Source: utility/controller_initializers.js</h1>
 
     
 
@@ -27,29 +27,27 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>'use strict';
-const pluralize = require('pluralize');
-const capitalize = require('capitalize');
+const path = require('path');
 
 /**
- * Generates a set of standard inflections from a given model name
- * @param  {Object} [options={}] Configurable options for string inflection
- * @param {string} options.model_name String to inflect
- * @return {Object}         A set of inflections from a given string
+ * Returns a proxy which implements a get trap that targets a utils object containing methods indexed by function name. If return value is a function default options from parent will be used as default options in each function call
+ * @param  {Object} parent An object that the proxy should be set on. Also assumes that parent is a API adapter.
+ * @param  {Object} utils  An object containing utility methods
+ * @return {Object}        Returns a Proxy
  */
-module.exports = function getViewModelProperties (options = {}) {
-	let model_name = options.model_name;
-	let viewmodel = {
-		name: model_name,
-		name_plural: pluralize(model_name)
+module.exports = function getInitializers (parent, utils = {}) {
+	const get = function (target, property) {
+		if (typeof utils[property] === 'function') {
+			return function (options = {}) {
+				return utils[property](Object.assign({}, parent, options));
+			};
+		}
+		return utils[property];
 	};
-	return Object.assign(viewmodel, {
-		capital_name: capitalize(model_name),
-		page_plural_title: capitalize(viewmodel.name_plural),
-		page_plural_count: `${ viewmodel.name_plural }count`,
-		page_plural_query: `${ viewmodel.name_plural }query`,
-		page_single_count: `${ model_name }count`,
-		page_pages: `${ model_name }pages`
-	});
+	const set = function () {
+		return true;
+	};
+	return new Proxy({}, { get, set });
 };</code></pre>
         </article>
     </section>

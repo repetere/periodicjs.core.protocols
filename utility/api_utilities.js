@@ -1,6 +1,7 @@
 'use strict';
 const ReponderInterface = require('periodicjs.core.responder');
 const pluralize = require('pluralize');
+const capitalize = require('capitalize');
 const path = require('path');
 const expand_names = require(path.join(__dirname, './expand_names'));
 
@@ -182,11 +183,16 @@ const INDEX = function (options = {}) {
 const REMOVE = function (options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
-  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db[viewmodel.name_plural];
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default || options.protocol.db[viewmodel.name_plural];
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
   return function (req, res) {
     try {
       let removeDocument = req.controllerData[viewmodel.name];
-      return dbAdapter.delete({ deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid] })
+      return dbAdapter.delete({ model: Model, deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid] })
         .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
           options.protocol.error(req, res, { err });
           return options.protocol.exception(req, res, { err });
@@ -236,10 +242,15 @@ const SEARCH = function (options = {}) {
  * @return {Function} Returns middleware that handles creating items
  */
 const CREATE = function (options = {}) {
-  let dbAdapter = options.protocol.db[options.model_name];
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
   return function (req, res) {
     try {
-      return dbAdapter.create({ newdoc: req.body })
+      return dbAdapter.create({ newdoc: req.body, model: Model })
         .then(options.protocol.redirect.bind(options.protocol, req, res, {
           model_name: `p-admin/content/${ options.model_name }/`
         }), err => {
@@ -262,12 +273,18 @@ const CREATE = function (options = {}) {
  * @return {Function} Returns middleware that handles updating items
  */
 const UPDATE = function (options = {}) {
-  let dbAdapter = options.protocol.db[options.model_name];
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
   return function (req, res) {
     try {
       let updateOptions = Object.assign(options, req.body, {
         id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id'],
-        track_changes: (req.saverevision === true) ? true : undefined
+        track_changes: (req.saverevision === true) ? true : undefined,
+        model: Model
       });
       return dbAdapter.update(updateOptions)
         .then(options.protocol.redirect.bind(options.protocol, req, res, {
@@ -322,7 +339,12 @@ const LOAD_WITH_LIMIT = function (options = {}) {
  * @return {Function}   Returns a middleware function that will query the database and return paginated data
  */
 const PAGINATE = function (options = {}) {
-  let dbAdapter = options.protocol.db[options.model_name];
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
   let viewmodel = setViewModelProperties(options);
   return function (req, res, next) {
     try {
@@ -331,7 +353,7 @@ const PAGINATE = function (options = {}) {
       let population = options.load_multiple_model_population || '';
       let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
       fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : fields;
-      return dbAdapter.search(Object.assign(req.query, { fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true }))
+      return dbAdapter.search(Object.assign(req.query, { model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true }))
         .then(result => {
           let currentpage;
           let next_page;
@@ -383,7 +405,12 @@ const PAGINATE = function (options = {}) {
  * @return {Function} Returns a middleware function that will query the database for a single item which is populated by default
  */
 const LOAD = function (options = {}) {
-  let dbAdapter = options.protocol.db[options.model_name];
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
   return function (req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
@@ -396,6 +423,7 @@ const LOAD = function (options = {}) {
         query: req.params.id,
         fields,
         docid,
+        model: Model,
         population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
       })
         .then(result => {
@@ -413,7 +441,55 @@ const LOAD = function (options = {}) {
   };
 };
 
+/**
+ * Generates a function that handles CLI inputs for queries
+ * @param {Object} options Configurable options for CLI handler
+ * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
+ * @return {Function} Returns a function that handles CLI inputs for queries and writes result to process stdout
+ */
+const CLI = function (options = {}) {
+  let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
+  let Model;
+  if (!options.protocol.db[options.model_name]) {
+    if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
+    else Model = options.model;
+  }
+  return function (argv) {
+    if (typeof argv.search === 'string') {
+      let search = (options.protocol.utilities && options.protocol.utilities && typeof options.protocol.utilities.stripTags === 'function') ? new RegExp(options.protocol.utilities.stripTags(argv.search), 'gi') : new RegExp(argv.search.replace(/[^a-z0-9@._]/gi, '-').toLowerCase(), 'gi');
+      let query;
+      if (argv.search.length < 1) query = {};
+      else {
+        query = {
+          $or: [{
+            name: search
+          }, {
+            title: search
+          }]
+        };
+      }
+      delete argv.search;
+      return dbAdapter.query(Object.assign(options, argv, { query }))
+        .then(result => {
+          options.protocol.logger['silly' || 'log']('got docs');
+          options.protocol.logger.info(result);
+          if (options.protocol.settings && options.protocol.settings.application && options.protocol.settings.application.environment !== 'test') process.exit(0);
+          return result;
+        }, e => {
+          options.protocol.logger.error(e);
+          if (options.protocol.settings && options.protocol.settings.application && options.protocol.settings.application.environment !== 'test') process.exit(0);
+          return Promise.reject(e);
+        });
+    }
+    else {
+      options.protocol.logger['silly' || 'log']('invalid task');
+      if (options.protocol.settings && options.protocol.settings.application && options.protocol.settings.application.environment !== 'test') process.exit(0);
+      return Promise.reject(new Error('Invalid Task'));
+    }
+  };
+};
+
 module.exports = (function () {
   view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs' });
-  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, setViewModelProperties, view_adapter };
+  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI, setViewModelProperties };
 })();
