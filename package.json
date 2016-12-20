@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "capitalize": "^1.0.0",
-    "periodicjs.core.responder": "~0.0.7",
+    "periodicjs.core.responder": "~0.0.8",
     "pluralize": "~1.1.2"
   },
   "description": "Customizable CMS platform",
@@ -93,6 +93,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT"
 }

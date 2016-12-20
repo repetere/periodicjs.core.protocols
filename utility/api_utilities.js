@@ -72,7 +72,8 @@ var setViewModelProperties = function (options) {
 const NEW = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: (typeof options.template_ext === 'string') ? `new${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'new.ejs',
+    basename: 'new',
+    fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
     transform_data: function (req) {
       return {
         pagedata: {
@@ -97,7 +98,8 @@ const NEW = function (options = {}) {
 const SHOW = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: (typeof options.template_ext === 'string') ? `show${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'show.ejs',
+    basename: 'show',
+    fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
     transform_data: function (req) {
       return {
         pagedata: {
@@ -126,7 +128,8 @@ const SHOW = function (options = {}) {
 const EDIT = function (options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: (typeof options.template_ext === 'string') ? `edit${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'edit.ejs',
+    basename: 'edit',
+    fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
     transform_data: function (req) {
       return {
         pagedata: {
@@ -152,7 +155,8 @@ const INDEX = function (options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: (typeof options.template_ext === 'string') ? `index${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'index.ejs',
+    basename: 'index',
+    fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
     transform_data: function (req) {
       return {
         pagedata: {
@@ -217,7 +221,8 @@ const SEARCH = function (options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
-    basename: (typeof options.template_ext === 'string') ? `search${ /\./.test(options.template_ext) ? options.template_ext : '.' + options.template_ext }` : 'search.ejs',
+    basename: 'search',
+    fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
     transform_data: function (req) {
       return {
         pagedata: {
