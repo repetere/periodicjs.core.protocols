@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const os = require('os');
+const Promisie = require('promisie');
 const API_ADAPTERS = require(path.join(__dirname, '../api_adapters/index'));
 
 /**
@@ -157,16 +158,12 @@ const HTTP_ADAPTER = class HTTP_Adapter {
 			else res.status(200).send(responder_override);
 		}
 		else {
-			return responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), options)
+			return responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), Object.assign(options, { req, res, skip_response: (options.return_response_data === true) }))
 				.try(result => {
-					if (options.return_response_data === true) return result;
-					else {
-						if (req.query.callback) res.status((err) ? 500 : 200).jsonp(result);
-						else res.status((err) ? 500 : 200).send(result);
-					}
+					if (options.return_response_data === true) return Promisie.resolve(result);
 				})
 				.catch(err => {
-					if (options.return_response_data === true) return Promise.reject(err);
+					if (options.return_response_data === true) return Promisie.reject(err);
 					this.exception(req, res, Object.assign({}, options, { err }));
 				});
 		}

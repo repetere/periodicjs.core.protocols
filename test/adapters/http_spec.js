@@ -297,6 +297,28 @@ describe('HTTP_Adapter', function () {
 			expect(spy).to.have.been.called.with({ err: testError });
 			console.error = original;
 		});
+		it('Should generate error details when there is a request object', () => {
+			let original = console.error.bind(console);
+			let argv;
+			let spy = chai.spy(function () {
+				argv = [...arguments]
+				original(...arguments);
+			});
+			let testError = new Error('Test Error');
+			console.error = spy;
+			let req = {
+				headers: {},
+				connection: {},
+				user: {
+					email: 'testemail@email.com'
+				}
+			};
+			Adapter.error(req, null, { err: testError });
+			console.error = original;
+			expect(spy).to.have.been.called();
+			expect(argv[2]).to.have.property('ipinfo');
+			expect(argv[2].ipinfo.user).to.equal('testemail@email.com');
+		});
 		it('Should have a warn logger', () => {
 			let original = console.warn.bind(console)
 			let spy = chai.spy(original);
