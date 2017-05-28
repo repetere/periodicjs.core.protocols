@@ -6,8 +6,7 @@
   "bugs": {
     "url": "https://github.com/typesettin/periodicjs.core.protocols/issues"
   },
-  "contributors": [
-    {
+  "contributors": [{
       "name": "Yaw Joseph Etse",
       "email": "yaw.etse@gmail.com"
     },
@@ -70,8 +69,7 @@
     "wysiwyg"
   ],
   "main": "index.js",
-  "maintainers": [
-    {
+  "maintainers": [{
       "name": "ecasilla",
       "email": "ecasilla@icloud.com"
     },
@@ -93,6 +91,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT"
 }

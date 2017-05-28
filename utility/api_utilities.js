@@ -8,7 +8,7 @@ const expand_names = require(path.join(__dirname, './expand_names'));
 var view_adapter;
 var active_model = {
   label: null,
-  expanded_names: null
+  expanded_names: null,
 };
 
 /**
@@ -24,22 +24,22 @@ var active_model = {
  * @param {Boolean} [options.strict] When falsy defined protocol responder will always be used instead of default HTML adapter. Default HTML adapter will also be ignored if protocol responder is an HTML adapter
  * @return {Function}         Returns an express middleware function that will render a view dependent on options
  */
-var composeMiddleware = function (options = {}) {
-  let { viewname, basename, model_name } = options;
+var composeMiddleware = function(options = {}) {
+  let { viewname, basename, model_name, } = options;
   let isHTMLAdapter = (options.protocol.responder.constructor === view_adapter.constructor);
   let render = view_adapter.render.bind(view_adapter);
   options.viewname = (typeof viewname === 'string') ? viewname : `${ model_name }/${ basename }`;
-  return function (req, res) {
-    let data = options.transform_data(req);
-    if (isHTMLAdapter || options.strict) return options.protocol.respond(req, res, Object.assign({}, options, { data }));
+  return function(req, res) {
+    let data = Object.assign({}, getRespondInKindData({ req, res, options, }), options.transform_data(req));
+    if (isHTMLAdapter || options.strict) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
     else {
       return render(data, options)
         .then(responder_override => {
-          return options.protocol.respond(req, res, Object.assign({}, options, { responder_override }));
+          return options.protocol.respond(req, res, Object.assign({}, options, { responder_override, }));
         })
         .catch(err => {
-          options.protocol.error(req, res, { err });
-          return options.protocol.exception(req, res, { err });
+          options.protocol.error(req, res, { err, });
+          return options.protocol.exception(req, res, { err, });
         });
     }
   };
@@ -50,14 +50,13 @@ var composeMiddleware = function (options = {}) {
  * @param {string} model_name String value that should be inflected
  * @return {Object} Returns an object containing inflected string values
  */
-var setViewModelProperties = function (options) {
+var setViewModelProperties = function(options) {
   let viewmodel;
   if (active_model.label !== options.model_name || !active_model.expanded_names) {
     viewmodel = expand_names(options);
     active_model.label = options.model_name;
     active_model.expanded_names = viewmodel;
-  }
-  else viewmodel = active_model.expanded_names;
+  } else viewmodel = active_model.expanded_names;
   return viewmodel;
 };
 
@@ -69,20 +68,20 @@ var setViewModelProperties = function (options) {
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "new" view
  */
-const NEW = function (options = {}) {
+const NEW = function(options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
     basename: 'new',
     fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
-    transform_data: function (req) {
+    transform_data: function(req) {
       return {
         pagedata: {
-          title: `New ${ options.model_name }`
+          title: `New ${ options.model_name }`,
         },
-        user: req.user
+        user: req.user,
       };
     },
-    model_name
+    model_name,
   });
   return composeMiddleware(middleware_options);
 };
@@ -95,24 +94,24 @@ const NEW = function (options = {}) {
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "show" view
  */
-const SHOW = function (options = {}) {
+const SHOW = function(options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
     basename: 'show',
     fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
-    transform_data: function (req) {
+    transform_data: function(req) {
       return {
         pagedata: {
-          title: req.controllerData[options.model_name].title
+          title: req.controllerData[options.model_name].title,
         },
-        user: req.user
+        user: req.user,
       };
     },
-    model_name
+    model_name,
   });
   let composed = composeMiddleware(middleware_options);
-  return function (req, res) {
-    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+  return function(req, res) {
+    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
     return composed(req, res);
   };
 };
@@ -125,20 +124,20 @@ const SHOW = function (options = {}) {
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "edit" view
  */
-const EDIT = function (options = {}) {
+const EDIT = function(options = {}) {
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
     basename: 'edit',
     fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
-    transform_data: function (req) {
+    transform_data: function(req) {
       return {
         pagedata: {
-          title: req.controllerData[options.model_name].title
+          title: req.controllerData[options.model_name].title,
         },
-        user: req.user
+        user: req.user,
       };
     },
-    model_name
+    model_name,
   });
   return composeMiddleware(middleware_options);
 };
@@ -151,28 +150,28 @@ const EDIT = function (options = {}) {
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns a middleware function that will render "index" view
  */
-const INDEX = function (options = {}) {
+const INDEX = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
     basename: 'index',
     fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
-    transform_data: function (req) {
+    transform_data: function(req) {
       return {
         pagedata: {
-          title: viewmodel.page_plural_title
+          title: viewmodel.page_plural_title,
         },
         user: req.user,
         [viewmodel.name_plural]: req.controllerData[viewmodel.name_plural],
         [viewmodel.page_plural_count]: req.controllerData[viewmodel.page_plural_count],
-        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
+        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined,
       };
     },
-    model_name
+    model_name,
   });
   let composed = composeMiddleware(middleware_options);
-  return function (req, res) {
-    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name] }));
+  return function(req, res) {
+    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
     return composed(req, res);
   };
 };
@@ -184,7 +183,7 @@ const INDEX = function (options = {}) {
  * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
  * @return {Function} Returns middleware that handles deleting items
  */
-const REMOVE = function (options = {}) {
+const REMOVE = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default || options.protocol.db[viewmodel.name_plural];
@@ -193,18 +192,17 @@ const REMOVE = function (options = {}) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (req, res) {
+  return function(req, res) {
     try {
       let removeDocument = req.controllerData[viewmodel.name];
-      return dbAdapter.delete({ model: Model, deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid] })
-        .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name }), err => {
-          options.protocol.error(req, res, { err });
-          return options.protocol.exception(req, res, { err });
+      return dbAdapter.delete({ model: Model, deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid], })
+        .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name, }), err => {
+          options.protocol.error(req, res, { err, });
+          return options.protocol.exception(req, res, { err, });
         });
-    }
-    catch (err) {
-      options.protocol.error(req, res, { err });
-      return options.protocol.exception(req, res, { err });
+    } catch (err) {
+      options.protocol.error(req, res, { err, });
+      return options.protocol.exception(req, res, { err, });
     }
   };
 };
@@ -217,24 +215,24 @@ const REMOVE = function (options = {}) {
  * @param {string} options.model_name Name of the model that the view middleware is being generated for
  * @return {Function} Returns middleware that handles rendering a view from paginated data
  */
-const SEARCH = function (options = {}) {
+const SEARCH = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
   let model_name = (options.use_plural_view_names) ? pluralize(options.model_name) : options.model_name;
   let middleware_options = Object.assign({}, options, {
     basename: 'search',
     fileext: (typeof options.template_ext === 'string') ? options.template_ext : undefined,
-    transform_data: function (req) {
+    transform_data: function(req) {
       return {
         pagedata: {
-          title: `${ viewmodel.page_plural_title } search results`
+          title: `${ viewmodel.page_plural_title } search results`,
         },
         user: req.user,
         [viewmodel.name_plural]: req.controllerData[viewmodel.name_plural],
         [viewmodel.page_plural_count]: req.controllerData[viewmodel.page_plural_count],
-        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined
+        [viewmodel.page_pages]: (req.query.limit && !isNaN(Number(req.query.limit))) ? Math.ceil(req.controllerData[viewmodel.page_plural_count] / req.query.limit) : undefined,
       };
     },
-    model_name
+    model_name,
   });
   return composeMiddleware(middleware_options);
 };
@@ -246,26 +244,25 @@ const SEARCH = function (options = {}) {
  * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
  * @return {Function} Returns middleware that handles creating items
  */
-const CREATE = function (options = {}) {
+const CREATE = function(options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
   let Model;
   if (!options.protocol.db[options.model_name]) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (req, res) {
+  return function(req, res) {
     try {
-      return dbAdapter.create({ newdoc: req.body, model: Model })
+      return dbAdapter.create({ newdoc: req.body, model: Model, })
         .then(options.protocol.redirect.bind(options.protocol, req, res, {
-          model_name: `p-admin/content/${ options.model_name }/`
+          model_name: `p-admin/content/${ options.model_name }/`,
         }), err => {
-          options.protocol.error(req, res, { err });
-          return options.protocol.exception(req, res, { err });
+          options.protocol.error(req, res, { err, });
+          return options.protocol.exception(req, res, { err, });
         });
-    }
-    catch (err) {
-      options.protocol.error(req, res, { err });
-      return options.protocol.exception(req, res, { err });
+    } catch (err) {
+      options.protocol.error(req, res, { err, });
+      return options.protocol.exception(req, res, { err, });
     }
   };
 };
@@ -277,31 +274,30 @@ const CREATE = function (options = {}) {
  * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
  * @return {Function} Returns middleware that handles updating items
  */
-const UPDATE = function (options = {}) {
+const UPDATE = function(options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
   let Model;
   if (!options.protocol.db[options.model_name]) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (req, res) {
+  return function(req, res) {
     try {
       let updateOptions = Object.assign(options, req.body, {
         id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id'],
         track_changes: (req.saverevision === true) ? true : undefined,
-        model: Model
+        model: Model,
       });
       return dbAdapter.update(updateOptions)
         .then(options.protocol.redirect.bind(options.protocol, req, res, {
-          model_name: `p-admin/${ options.model_name }/edit/`
+          model_name: `p-admin/${ options.model_name }/edit/`,
         }), err => {
-          options.protocol.error(req, res, { err });
-          return options.protocol.exception(req, res, { err });
+          options.protocol.error(req, res, { err, });
+          return options.protocol.exception(req, res, { err, });
         });
-    }
-    catch (err) {
-      options.protocol.error(req, res, { err });
-      return options.protocol.exception(req, res, { err });
+    } catch (err) {
+      options.protocol.error(req, res, { err, });
+      return options.protocol.exception(req, res, { err, });
     }
   };
 };
@@ -312,9 +308,9 @@ const UPDATE = function (options = {}) {
  * @param {string} options.model_name Name of the model being queried
  * @return {Function} Returns a middleware that ensures that query results are paginated
  */
-const LOAD_WITH_COUNT = function (options = {}) {
+const LOAD_WITH_COUNT = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
-  return function (req, res, next) {
+  return function(req, res, next) {
     req.headers[`load${ viewmodel.page_single_count }`] = true;
     next();
   };
@@ -325,9 +321,9 @@ const LOAD_WITH_COUNT = function (options = {}) {
  * @param {Object} options Configurable options for generating middleware
  * @return {Function} Returns a middleware that set default limit and starting page number params on req.query for paginated queries
  */
-const LOAD_WITH_LIMIT = function (options = {}) {
+const LOAD_WITH_LIMIT = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
-  return function (req, res, next) {
+  return function(req, res, next) {
     req.query.limit = req.query[`${ viewmodel.name_plural }perpage`] || req.query.docsperpage || req.query.limit || req.body[`${ viewmodel.name_plural }perpage`] || req.body.docsperpage || req.body.limit || 15;
     req.query.pagenum = ((req.query.pagenum && req.query.pagenum > 0) || (req.body.pagenum && req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;
     next();
@@ -343,7 +339,7 @@ const LOAD_WITH_LIMIT = function (options = {}) {
  * @param {string|Object} [options.population=""]  Population settings for model
  * @return {Function}   Returns a middleware function that will query the database and return paginated data
  */
-const PAGINATE = function (options = {}) {
+const PAGINATE = function(options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
   let Model;
   if (!options.protocol.db[options.model_name]) {
@@ -351,14 +347,14 @@ const PAGINATE = function (options = {}) {
     else Model = options.model;
   }
   let viewmodel = setViewModelProperties(options);
-  return function (req, res, next) {
+  return function(req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
       let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
       let population = options.load_multiple_model_population || '';
       let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
       fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : fields;
-      return dbAdapter.search(Object.assign(req.query, { model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true }))
+      return dbAdapter.search(Object.assign(req.query, { model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true, }))
         .then(result => {
           let currentpage;
           let next_page;
@@ -368,8 +364,7 @@ const PAGINATE = function (options = {}) {
             currentpage = (hasPage) ? hasPage : result['0'];
             next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
             prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
-          }
-          else {
+          } else {
             currentpage = result['0'];
             next_page = result['1'];
           }
@@ -384,21 +379,20 @@ const PAGINATE = function (options = {}) {
             [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
               if (/^\d+$/.test(key)) pages[key] = result[key];
               return pages;
-            }, {})
+            }, {}),
           };
-          if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data }));
+          if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
           else {
             req.controllerData[viewmodel.name_plural] = data;
             next();
           }
         }, err => {
-          options.protocol.error(req, res, { err });
-          return options.protocol.exception(req, res, { err });
+          options.protocol.error(req, res, { err, });
+          return options.protocol.exception(req, res, { err, });
         });
-    }
-    catch (err) {
-      options.protocol.error(req, res, { err });
-      return options.protocol.exception(req, res, { err });
+    } catch (err) {
+      options.protocol.error(req, res, { err, });
+      return options.protocol.exception(req, res, { err, });
     }
   };
 };
@@ -409,38 +403,37 @@ const PAGINATE = function (options = {}) {
  * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
  * @return {Function} Returns a middleware function that will query the database for a single item which is populated by default
  */
-const LOAD = function (options = {}) {
+const LOAD = function(options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
   let Model;
   if (!options.protocol.db[options.model_name]) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (req, res, next) {
+  return function(req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
       let fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : undefined;
       let docid;
       if (options.docid && (!req.controllerData.docid && !req.query.docid)) docid = options.docid;
       else if (req.controllerData.docid) docid = req.controllerData.docid;
-      else if (req.query.docid) docid = req.query.docid; 
+      else if (req.query.docid) docid = req.query.docid;
       dbAdapter.load({
-        query: req.params.id,
-        fields,
-        docid,
-        model: Model,
-        population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined
-      })
+          query: req.params.id,
+          fields,
+          docid,
+          model: Model,
+          population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
+        })
         .then(result => {
           req.controllerData[options.model_name] = result;
           next();
         }, err => {
-          options.protocol.error(req, res, { err });
+          options.protocol.error(req, res, { err, });
           next(err);
         });
-    }
-    catch (err) {
-      options.protocol.error(req, res, { err });
+    } catch (err) {
+      options.protocol.error(req, res, { err, });
       next(err);
     }
   };
@@ -452,14 +445,14 @@ const LOAD = function (options = {}) {
  * @param {Object} options.protocol A protocol adapter with a defined db property containing database adapters indexed by model name
  * @return {Function} Returns a function that handles CLI inputs for queries and writes result to process stdout
  */
-const CLI = function (options = {}) {
+const CLI = function(options = {}) {
   let dbAdapter = options.protocol.db[options.model_name] || options.protocol.db.default;
   let Model;
   if (!options.protocol.db[options.model_name]) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (argv) {
+  return function(argv) {
     if (typeof argv.search === 'string') {
       let search = (options.protocol.utilities && options.protocol.utilities && typeof options.protocol.utilities.stripTags === 'function') ? new RegExp(options.protocol.utilities.stripTags(argv.search), 'gi') : new RegExp(argv.search.replace(/[^a-z0-9@._]/gi, '-').toLowerCase(), 'gi');
       let query;
@@ -467,14 +460,14 @@ const CLI = function (options = {}) {
       else {
         query = {
           $or: [{
-            name: search
+            name: search,
           }, {
-            title: search
-          }]
+            title: search,
+          }, ],
         };
       }
       delete argv.search;
-      return dbAdapter.query(Object.assign(options, argv, { query }))
+      return dbAdapter.query(Object.assign(options, argv, { query, }))
         .then(result => {
           options.protocol.logger['silly' || 'log']('got docs');
           options.protocol.logger.info(result);
@@ -485,8 +478,7 @@ const CLI = function (options = {}) {
           if (options.protocol.settings && options.protocol.settings.application && options.protocol.settings.application.environment !== 'test') process.exit(0);
           return Promise.reject(e);
         });
-    }
-    else {
+    } else {
       options.protocol.logger['silly' || 'log']('invalid task');
       if (options.protocol.settings && options.protocol.settings.application && options.protocol.settings.application.environment !== 'test') process.exit(0);
       return Promise.reject(new Error('Invalid Task'));
@@ -494,7 +486,30 @@ const CLI = function (options = {}) {
   };
 };
 
-module.exports = (function () {
-  view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs' });
-  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI, setViewModelProperties };
+function getRespondInKindData(resOptions) {
+  const { req, res, options, } = resOptions;
+  const periodicExpressAppLocals = Object.assign({}, req.app.locals, { settings: true, });
+  // delete periodicExpressAppLocals.settings;
+  const responseData = Object.assign({
+    periodic: periodicExpressAppLocals,
+    request: {},
+  }, res.locals);
+  responseData.request = {
+    query: req.query,
+    params: req.params,
+    baseurl: req.baseUrl,
+    originalurl: req.originalUrl,
+    parsed: req._parsedUrl,
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    remoteAddress: req.connection.remoteAddress,
+    referer: req.headers.referer,
+    originalUrl: req.originalUrl,
+    headerHost: req.headers.host,
+  };
+  return responseData;
+}
+
+module.exports = (function() {
+  view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs', });
+  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI, setViewModelProperties, };
 })();
