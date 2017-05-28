@@ -487,7 +487,7 @@ const CLI = function(options = {}) {
 };
 
 function getRespondInKindData(resOptions) {
-  const { req, res, options, } = resOptions;
+  const { req = { app: {}, }, res = {}, } = resOptions;
   const periodicExpressAppLocals = Object.assign({}, req.app.locals, { settings: true, });
   // delete periodicExpressAppLocals.settings;
   const responseData = Object.assign({
