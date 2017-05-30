@@ -488,26 +488,32 @@ const CLI = function(options = {}) {
 
 function getRespondInKindData(resOptions) {
   let { req, res, } = resOptions;
-  res = Object.assign({ locals: {}, }, res);
-  req = Object.assign({ app: {}, connection: {}, headers: {}, }, req);
-  const periodicExpressAppLocals = Object.assign({}, req.app.locals, { settings: true, });
-  // delete periodicExpressAppLocals.settings;
+  let inKindRes = (!res || !res.locals) ? Object.assign({}, { locals: {}, }, res) : res;
+  let inKindReq = (!req || !req.app || !req.connection || !req.headers) ? Object.assign({}, { app: {}, connection: {}, headers: {}, },
+    req) : req;
+  const periodicExpressAppLocals = Object.assign({},
+    inKindReq.app.locals //, { settings: true, }
+  );
+
   const responseData = Object.assign({
     periodic: periodicExpressAppLocals,
     request: {},
-  }, res.locals);
+  }, inKindRes.locals);
   responseData.request = {
-    query: req.query,
-    params: req.params,
-    baseurl: req.baseUrl,
-    originalurl: req.originalUrl,
-    parsed: req._parsedUrl,
-    'x-forwarded-for': req.headers['x-forwarded-for'],
-    remoteAddress: req.connection.remoteAddress,
-    referer: req.headers.referer,
-    originalUrl: req.originalUrl,
-    headerHost: req.headers.host,
+    query: inKindReq.query,
+    params: inKindReq.params,
+    baseurl: inKindReq.baseUrl,
+    originalurl: inKindReq.originalUrl,
+    parsed: inKindReq._parsedUrl,
+    'x-forwarded-for': inKindReq.headers['x-forwarded-for'],
+    remoteAddress: inKindReq.connection.remoteAddress,
+    referer: inKindReq.headers.referer,
+    originalUrl: inKindReq.originalUrl,
+    headerHost: inKindReq.headers.host,
   };
+  // console.log('inKindRes.locals', inKindRes.locals);
+  // console.log('inKindReq.app.locals', inKindReq.app.locals);
+  // console.log({ responseData });
   return responseData;
 }
 
