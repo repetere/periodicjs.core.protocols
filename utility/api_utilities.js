@@ -105,6 +105,7 @@ const SHOW = function(options = {}) {
         pagedata: {
           title: req.controllerData[options.model_name].title,
         },
+        data: req.controllerData[options.model_name],
         user: req.user,
       };
     },
@@ -135,6 +136,7 @@ const EDIT = function(options = {}) {
         pagedata: {
           title: req.controllerData[options.model_name].title,
         },
+        data: req.controllerData[options.model_name],
         user: req.user,
       };
     },
