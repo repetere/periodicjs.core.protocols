@@ -350,7 +350,7 @@ const PAGINATE = function(options = {}) {
   return function(req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
-      let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : options.query || {};
+      let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : req.query.query || {};
       let population = options.load_multiple_model_population || '';
       let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
       fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : fields;
@@ -419,12 +419,12 @@ const LOAD = function(options = {}) {
       else if (req.controllerData.docid) docid = req.controllerData.docid;
       else if (req.query.docid) docid = req.query.docid;
       dbAdapter.load({
-          query: req.params.id,
-          fields,
-          docid,
-          model: Model,
-          population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
-        })
+        query: req.params.id,
+        fields,
+        docid,
+        model: Model,
+        population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
+      })
         .then(result => {
           req.controllerData[options.model_name] = result;
           next();
@@ -463,7 +463,7 @@ const CLI = function(options = {}) {
             name: search,
           }, {
             title: search,
-          }, ],
+          },],
         };
       }
       delete argv.search;

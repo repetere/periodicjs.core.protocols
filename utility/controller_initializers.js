@@ -8,16 +8,16 @@ const path = require('path');
  * @return {Object}        Returns a Proxy
  */
 module.exports = function getInitializers (parent, utils = {}) {
-	const get = function (target, property) {
-		if (typeof utils[property] === 'function') {
-			return function (options = {}) {
-				return utils[property](Object.assign({}, parent, options));
-			};
-		}
-		return utils[property];
-	};
-	const set = function () {
-		return true;
-	};
-	return new Proxy({}, { get, set });
+  const get = function (target, property) {
+    if (typeof utils[property] === 'function') {
+      return function (options = {}) {
+        return utils[property](Object.assign({}, parent, options));
+      };
+    }
+    return utils[property];
+  };
+  const set = function () {
+    return true;
+  };
+  return new Proxy({}, { get, set, });
 };

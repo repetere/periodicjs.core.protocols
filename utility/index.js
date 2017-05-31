@@ -5,7 +5,7 @@ const GET_EXPANDED_NAMES = require(path.join(__dirname, './expand_names'));
 const CONTROLLER_INITIALIZERS = require(path.join(__dirname, './controller_initializers'));
 
 module.exports = { 
-	api: API_UTILITIES,
-	expand_names: GET_EXPANDED_NAMES,
-	controller_initializers: CONTROLLER_INITIALIZERS 
+  api: API_UTILITIES,
+  expand_names: GET_EXPANDED_NAMES,
+  controller_initializers: CONTROLLER_INITIALIZERS, 
 };

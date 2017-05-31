@@ -4,7 +4,7 @@ const SOCKET = require('./websocket');
 const STREAM = require('./stream');
 
 module.exports = {
-	http: HTTP,
-	websocket: SOCKET,
-	stream: STREAM
+  http: HTTP,
+  websocket: SOCKET,
+  stream: STREAM,
 };
