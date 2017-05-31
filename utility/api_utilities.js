@@ -3,6 +3,7 @@ const ReponderInterface = require('periodicjs.core.responder');
 const pluralize = require('pluralize');
 const capitalize = require('capitalize');
 const path = require('path');
+const querystring = require('querystring');
 const expand_names = require(path.join(__dirname, './expand_names'));
 
 var view_adapter;
@@ -489,7 +490,7 @@ const CLI = function(options = {}) {
 function getRespondInKindData(resOptions) {
   let { req, res, } = resOptions;
   let inKindRes = (!res || !res.locals) ? Object.assign({}, { locals: {}, }, res) : res;
-  let inKindReq = (!req || !req.app || !req.connection || !req.headers) ? Object.assign({}, { app: {}, connection: {}, headers: {}, },
+  let inKindReq = (!req || !req.app || !req.connection || !req.headers || !req._parsedUrl) ? Object.assign({}, { app: {}, connection: {}, headers: {}, _parsedUrl:{}, },
     req) : req;
   const periodicExpressAppLocals = Object.assign({},
     inKindReq.app.locals //, { settings: true, }
@@ -500,7 +501,7 @@ function getRespondInKindData(resOptions) {
     request: {},
   }, inKindRes.locals);
   responseData.request = {
-    query: inKindReq.query,
+    query: querystring.parse(inKindReq._parsedUrl.query),
     params: inKindReq.params,
     baseurl: inKindReq.baseUrl,
     originalurl: inKindReq.originalUrl,
