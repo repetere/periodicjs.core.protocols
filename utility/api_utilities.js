@@ -422,15 +422,21 @@ const LOAD = function(options = {}) {
       else if (req.controllerData.docid) docid = req.controllerData.docid;
       else if (req.query.docid) docid = req.query.docid;
       dbAdapter.load({
-        query: req.params.id,
-        fields,
-        docid,
-        model: Model,
-        population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
-      })
+          query: req.params.id,
+          fields,
+          docid,
+          model: Model,
+          population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
+        })
         .then(result => {
-          req.controllerData[options.model_name] = result;
-          next();
+          if (result) {
+            req.controllerData[options.model_name] = result;
+            next();
+          } else {
+            let err = new Error('Invalid Request');
+            options.protocol.error(req, res, { err, });
+            next(err);
+          }
         }, err => {
           options.protocol.error(req, res, { err, });
           next(err);
@@ -466,7 +472,7 @@ const CLI = function(options = {}) {
             name: search,
           }, {
             title: search,
-          },],
+          }, ],
         };
       }
       delete argv.search;
@@ -492,7 +498,7 @@ const CLI = function(options = {}) {
 function getRespondInKindData(resOptions) {
   let { req, res, } = resOptions;
   let inKindRes = (!res || !res.locals) ? Object.assign({}, { locals: {}, }, res) : res;
-  let inKindReq = (!req || !req.app || !req.connection || !req.headers || !req._parsedUrl) ? Object.assign({}, { app: {}, connection: {}, headers: {}, _parsedUrl:{}, },
+  let inKindReq = (!req || !req.app || !req.connection || !req.headers || !req._parsedUrl) ? Object.assign({}, { app: {}, connection: {}, headers: {}, _parsedUrl: {}, },
     req) : req;
   const periodicExpressAppLocals = Object.assign({},
     inKindReq.app.locals //, { settings: true, }
