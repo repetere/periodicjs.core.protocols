@@ -71,18 +71,40 @@ const REST_ADAPTER = class REST_Adapter {
    * @return {Object}         Returns an express router that has RESTful routes registered to it
    */
   routing (options = {}) {
+    const preTransform = (this.protocol.resources && this.protocol.resources.utilities && this.protocol.resources.utilities.middleware) ? this.protocol.resources.utilities.middleware.transformRequest.call(this.protocol.resources, 'pre', this.protocol.resources.transforms) : (req, res, next)=>{
+      next();
+    };
+    const postTransform = (this.protocol.resources && this.protocol.resources.utilities && this.protocol.resources.utilities.middleware) ? this.protocol.resources.utilities.middleware.transformRequest.call(this.protocol.resources, 'post', this.protocol.resources.transforms) : (req, res, next)=>{
+      next();
+    };
     let { router, middleware, override, model_name, viewmodel, } = options;
     if (!viewmodel) viewmodel = API_UTILITIES.setViewModelProperties({ model_name, });
     router = (router) ? router : this.protocol.express.Router();
-    router.get(`/${ viewmodel.name_plural }/new`, (override && override.create_index && Array.isArray(override.create_index)) ? override.create_index : middleware.new);
-    router.get(`/${ viewmodel.name_plural }/edit`, (override && override.update_index && Array.isArray(override.update_index)) ? override.update_index : middleware.edit);
+    router.get(`/${viewmodel.name_plural}/new`,
+      (override && override.create_index && Array.isArray(override.create_index))
+        ? override.create_index
+        : middleware.new);
+    router.get(`/${viewmodel.name_plural}/edit`,
+      (override && override.update_index && Array.isArray(override.update_index))
+        ? override.update_index
+        : middleware.edit);
     router.route(`/${ viewmodel.name_plural }`)
-      .get((override && override.get_index && Array.isArray(override.get_index)) ? override.get_index : [middleware.load_with_count, middleware.load_with_limit, middleware.paginate, middleware.index, ])
-      .post((override && override.create_item && Array.isArray(override.create_item)) ? override.create_item : [this.protocol.resources.core.controller.save_revision, middleware.create, ]);
+      .get((override && override.get_index && Array.isArray(override.get_index))
+        ? override.get_index
+        : [preTransform, middleware.load_with_count, middleware.load_with_limit, middleware.paginate, postTransform, middleware.index, ])
+      .post((override && override.create_item && Array.isArray(override.create_item))
+        ? override.create_item
+        : [preTransform, this.protocol.resources.core.controller.save_revision, middleware.create, ]);
     router.route(`/${ viewmodel.name_plural }/:id`)
-      .get((override && override.get_item && Array.isArray(override.get_item)) ? override.get_item : [middleware.load, middleware.show, ])
-      .put((override && override.update_item && Array.isArray(override.update_item)) ? override.update_item : [this.protocol.resources.core.controller.save_revision, middleware.update, ])
-      .delete((override && override.delete_item && Array.isArray(override.delete_item)) ? override.delete_item : [middleware.load, middleware.remove, ]);
+      .get((override && override.get_item && Array.isArray(override.get_item))
+        ? override.get_item
+        : [preTransform, middleware.load, postTransform, middleware.show, ])
+      .put((override && override.update_item && Array.isArray(override.update_item))
+        ? override.update_item
+        : [preTransform, this.protocol.resources.core.controller.save_revision, middleware.update, postTransform, ])
+      .delete((override && override.delete_item && Array.isArray(override.delete_item))
+        ? override.delete_item
+        : [preTransform, middleware.load, middleware.remove, postTransform, ]);
     return router;
   }
   /**
