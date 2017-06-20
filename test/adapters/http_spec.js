@@ -261,7 +261,7 @@ describe('HTTP_Adapter', function () {
 					let result = Adapter.api.implement({
 						router: express.Router(),
 						model_name: 'example',
-						dirname: [path.join(__dirname, '../')]
+						dirname: path.join(__dirname, '../')
 					});
 					Adapter.express.use('/v2', result.router);
 					return Promisie.promisify(request.get, request)({ url: 'http://localhost:3001/v2/examples' });

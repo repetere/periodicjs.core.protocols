@@ -362,8 +362,9 @@ const PAGINATE = function(options = {}) {
           let currentpage;
           let next_page;
           let prev_page;
+          let hasPage;
           if (req.query.pagenum) {
-            let hasPage = result[req.query.pagenum.toString()];
+            hasPage = result[req.query.pagenum.toString()];
             currentpage = (hasPage) ? hasPage : result['0'];
             next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
             prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
@@ -376,13 +377,15 @@ const PAGINATE = function(options = {}) {
             [`${ viewmodel.name }limit`]: req.query.limit,
             [`${ viewmodel.name }offset`]: req.query.offset,
             [`${ viewmodel.name }pages`]: result.total_pages,
-            [`${ viewmodel.name }page_current`]: currentpage,
-            [`${ viewmodel.name }page_next`]: next_page,
-            [`${ viewmodel.name }page_prev`]: prev_page,
-            [viewmodel.name_plural]: Object.keys(result).reduce((pages, key) => {
+            [`${ viewmodel.name }page_current`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) : 1) : currentpage,
+            [`${ viewmodel.name }page_next`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) + 1 : ((next_page) ? 2 : undefined)) : next_page,
+            [`${ viewmodel.name }page_prev`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined) : prev_page,
+            [viewmodel.name_plural]: (!req.query.iterable) ? currentpage : Object.keys(result).reduce((pages, key) => {
               if (/^\d+$/.test(key)) pages[key] = result[key];
               return pages;
             }, {}),
+            [`${ viewmodel.name_plural }total`]: result.collection_count,
+            [`${ viewmodel.name_plural }pages`]: result.collection_pages,
           };
           if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
           else {

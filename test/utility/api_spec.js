@@ -690,9 +690,9 @@ describe('API Utilities', function () {
 					.try(result => {
 						expect(result).to.have.property('data');
 						expect(result.data).to.have.property('examples');
-						expect(Object.keys(result.data.examples)).to.deep.equal(['0','1','2']);
+						expect(Object.keys(result.data.examples)).to.deep.equal(['documents', 'count']);
 						expect(result.data.examplescount).to.equal(5);
-						expect(result.data.examplepage_current.documents[0].toObject().contact).to.not.be.ok;
+						expect(result.data.examplepage_current).to.equal(1);
 						done();
 					})
 					.catch(done);
@@ -701,7 +701,7 @@ describe('API Utilities', function () {
 				let paginate = API_UTILITY.PAGINATE({ protocol, model_name: 'example', fields: { _id: 1, createdat: 1 }, query: { 'contact.first_name': 'Hello' } });
 				let query = {
 					pagelength: 2,
-					pagenum: 1,
+					pagenum: 2,
 					limit: 6,
 					format: 'json'
 				};
@@ -709,10 +709,10 @@ describe('API Utilities', function () {
 					.try(result => {
 						expect(result).to.have.property('data');
 						expect(result.data).to.have.property('examples');
-						expect(Object.keys(result.data.examples)).to.deep.equal(['0','1','2']);
+						expect(Object.keys(result.data.examples)).to.deep.equal(['documents', 'count']);
 						expect(result.data.examplepage_next).to.be.ok;
 						expect(result.data.examplepage_prev).to.be.ok;
-						expect(result.data.examplepage_current.documents[0].toObject()).to.have.property('contact');
+						expect(result.data.examplepage_current).to.equal(2);
 						done();
 					})
 					.catch(done);
