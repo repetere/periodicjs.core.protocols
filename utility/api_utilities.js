@@ -364,7 +364,7 @@ const PAGINATE = function(options = {}) {
           let prev_page;
           let hasPage;
           if (req.query.pagenum) {
-            hasPage = result[req.query.pagenum.toString()];
+            hasPage = result[(Number(req.query.pagenum) - 1).toString()];
             currentpage = (hasPage) ? hasPage : result['0'];
             next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
             prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
@@ -385,7 +385,7 @@ const PAGINATE = function(options = {}) {
               return pages;
             }, {}),
             [`${ viewmodel.name_plural }total`]: result.collection_count,
-            [`${ viewmodel.name_plural }pages`]: result.collection_pages,
+            [`${ viewmodel.name_plural }totalpages`]: result.collection_pages,
           };
           if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
           else {
