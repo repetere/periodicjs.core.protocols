@@ -357,33 +357,23 @@ const PAGINATE = function(options = {}) {
       let population = options.load_multiple_model_population || '';
       let fields = (options.fields && typeof options.fields === 'object') ? options.fields : undefined;
       fields = (req.controllerData && req.controllerData.model_fields) ? req.controllerData.model_fields : fields;
-      return dbAdapter.search(Object.assign(req.query, { model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true, }))
+      let pagenum = (!isNaN(Number(req.query.pagenum))) ? Number(req.query.pagenum) - 1 : 0;
+      let limit = (!isNaN(Number(req.query.limit))) ? Number(req.query.limit) : Number(dbAdapter.limit);
+      let pagelength = (!isNaN(Number(req.query.pagelength))) ? Number(req.query.pagelength) : Number(dbAdapter.pagelength);
+      let skip = pagelength;
+      skip = skip * pagenum;
+      return dbAdapter.search(Object.assign(req.query, { skip, limit: (pagelength <= limit) ? pagelength : limit, pagelength, model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true, }))
         .then(result => {
-          let currentpage;
-          let next_page;
-          let prev_page;
-          let hasPage;
-          if (req.query.pagenum) {
-            hasPage = result[(Number(req.query.pagenum) - 1).toString()];
-            currentpage = (hasPage) ? hasPage : result['0'];
-            next_page = (hasPage) ? result[Number(req.query.pagenum) + 1] : undefined;
-            prev_page = (hasPage) ? result[Number(req.query.pagenum) - 1] : undefined;
-          } else {
-            currentpage = result['0'];
-            next_page = result['1'];
-          }
+          let currentpage = result['0'];
           let data = {
             [viewmodel.page_plural_count]: result.total,
             [`${ viewmodel.name }limit`]: req.query.limit,
             [`${ viewmodel.name }offset`]: req.query.offset,
             [`${ viewmodel.name }pages`]: result.total_pages,
-            [`${ viewmodel.name }page_current`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) : 1) : currentpage,
-            [`${ viewmodel.name }page_next`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) + 1 : ((next_page) ? 2 : undefined)) : next_page,
-            [`${ viewmodel.name }page_prev`]: (!req.query.iterable) ? ((req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined) : prev_page,
-            [viewmodel.name_plural]: (!req.query.iterable) ? currentpage : Object.keys(result).reduce((pages, key) => {
-              if (/^\d+$/.test(key)) pages[key] = result[key];
-              return pages;
-            }, {}),
+            [`${ viewmodel.name }page_current`]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
+            [`${ viewmodel.name }page_next`]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
+            [`${ viewmodel.name }page_prev`]: (req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined,
+            [viewmodel.name_plural]: currentpage,
             [`${ viewmodel.name_plural }total`]: result.collection_count,
             [`${ viewmodel.name_plural }totalpages`]: result.collection_pages,
           };

@@ -691,7 +691,9 @@ describe('API Utilities', function () {
 						expect(result).to.have.property('data');
 						expect(result.data).to.have.property('examples');
 						expect(Object.keys(result.data.examples)).to.deep.equal(['documents', 'count']);
-						expect(result.data.examplescount).to.equal(5);
+						expect(result.data.examplescount).to.equal(2);
+						expect(result.data.examplepage_next).to.equal(2);
+						expect(result.data.examplepage_prev).to.not.be.ok;
 						expect(result.data.examplepage_current).to.equal(1);
 						done();
 					})
@@ -710,8 +712,8 @@ describe('API Utilities', function () {
 						expect(result).to.have.property('data');
 						expect(result.data).to.have.property('examples');
 						expect(Object.keys(result.data.examples)).to.deep.equal(['documents', 'count']);
-						expect(result.data.examplepage_next).to.be.ok;
-						expect(result.data.examplepage_prev).to.be.ok;
+						expect(result.data.examplepage_next).to.equal(3);
+						expect(result.data.examplepage_prev).to.equal(1);
 						expect(result.data.examplepage_current).to.equal(2);
 						done();
 					})
