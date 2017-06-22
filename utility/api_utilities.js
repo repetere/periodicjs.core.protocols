@@ -361,14 +361,15 @@ const PAGINATE = function(options = {}) {
       let limit = (!isNaN(Number(req.query.limit))) ? Number(req.query.limit) : Number(dbAdapter.limit);
       let pagelength = (!isNaN(Number(req.query.pagelength))) ? Number(req.query.pagelength) : Number(dbAdapter.pagelength);
       let skip = pagelength;
-      skip = skip * pagenum;
-      return dbAdapter.search(Object.assign(req.query, { skip, limit: (pagelength <= limit) ? pagelength : limit, pagelength, model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true, }))
+      skip = (!isNaN(Number(req.query.skip))) ? Number(req.query.skip) : skip * pagenum;
+      return dbAdapter.search(Object.assign({}, req.query, { skip, limit: (pagelength <= limit) ? pagelength : limit, pagelength, model: Model, fields, population, query, paginate: (req.query.paginate === 'false' || req.query.paginate === false || req.controllerData.paginate === 'false' || req.controllerData.paginate === false) ? false : true, }))
         .then(result => {
           let currentpage = result['0'];
+          if (req.query.skip) req.query.pagenum = Math.ceil(skip / pagelength) + 1;
           let data = {
             [viewmodel.page_plural_count]: result.total,
             [`${ viewmodel.name }limit`]: req.query.limit,
-            [`${ viewmodel.name }offset`]: req.query.offset,
+            [`${ viewmodel.name }offset`]: req.query.skip || skip,
             [`${ viewmodel.name }pages`]: result.total_pages,
             [`${ viewmodel.name }page_current`]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
             [`${ viewmodel.name }page_next`]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
