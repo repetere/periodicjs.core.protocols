@@ -113,7 +113,7 @@ const SHOW = function(options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function(req, res) {
-    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
+    if (req.is('json') || (req.query && req.query.format && /^json$/i.test(req.query.format))) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
     return composed(req, res);
   };
 };
