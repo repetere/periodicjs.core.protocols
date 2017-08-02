@@ -395,11 +395,14 @@ const PAGINATE = function(options = {}) {
 };
 
 function jsonReq(req) {
-  return (req && req.headers && (req.headers.accept || req.headers.accepts)) ?
-    req.headers.accept.indexOf('json') > -1 || req.headers.accepts.indexOf('json') > -1 :
-    req.is('json') || req.query.format === 'json' || /^json$/i.test(req.query.format);
+  if (req && req.headers && req.headers.accept) {
+    return req.headers.accept.indexOf('json') > -1 || req.is('json') || req.query.format === 'json' || /^json$/i.test(req.query.format);
+  } else if (req && req.headers && req.headers.accepts) {
+    return req.headers.accepts.indexOf('json') > -1 || req.is('json') || req.query.format === 'json' || /^json$/i.test(req.query.format);
+  } else {
+    return req.is('json') || req.query.format === 'json' || /^json$/i.test(req.query.format);
+  }
 }
-
 /**
  * Generates middleware that handles querying for a single populated item
  * @param {Object} options Configurable options for load middleware
