@@ -113,7 +113,7 @@ const SHOW = function(options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function(req, res) {
-    if (req.is('json') || (req.query && req.query.format && /^json$/i.test(req.query.format))) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
+    if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
     return composed(req, res);
   };
 };
@@ -174,7 +174,7 @@ const INDEX = function(options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function(req, res) {
-    if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
+    if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
     return composed(req, res);
   };
 };
@@ -378,7 +378,7 @@ const PAGINATE = function(options = {}) {
             [`${ viewmodel.name_plural }total`]: result.collection_count,
             [`${ viewmodel.name_plural }totalpages`]: result.collection_pages,
           };
-          if (req.query && req.query.format && /^json$/i.test(req.query.format)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
+          if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
           else {
             req.controllerData[viewmodel.name_plural] = data;
             next();
@@ -393,6 +393,12 @@ const PAGINATE = function(options = {}) {
     }
   };
 };
+
+function jsonReq(req) {
+  return (req && req.headers && (req.headers.accept || req.headers.accepts)) ?
+    req.headers.accept.indexOf('json') > -1 || req.headers.accepts.indexOf('json') > -1 :
+    req.is('json') || req.query.format === 'json' || /^json$/i.test(req.query.format);
+}
 
 /**
  * Generates middleware that handles querying for a single populated item
