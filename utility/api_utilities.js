@@ -31,7 +31,7 @@ var composeMiddleware = function(options = {}) {
   let render = view_adapter.render.bind(view_adapter);
   options.viewname = (typeof viewname === 'string') ? viewname : `${ model_name }/${ basename }`;
   return function(req, res) {
-    let data = Object.assign({}, getRespondInKindData({ req, res, options, }), options.transform_data(req));
+    let data = Object.assign({}, req.controllerData, getRespondInKindData({ req, res, options, }), options.transform_data(req));
     if (isHTMLAdapter || options.strict) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
     else {
       return render(data, options)
@@ -174,7 +174,7 @@ const INDEX = function(options = {}) {
   });
   let composed = composeMiddleware(middleware_options);
   return function(req, res) {
-    if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[options.model_name], }));
+    if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data: req.controllerData[viewmodel.name_plural || options.model_name || pluralize(options.model_name)], }));
     return composed(req, res);
   };
 };
@@ -374,12 +374,15 @@ const PAGINATE = function(options = {}) {
             [`${ viewmodel.name }page_current`]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
             [`${ viewmodel.name }page_next`]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
             [`${ viewmodel.name }page_prev`]: (req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined,
-            [viewmodel.name_plural]: currentpage,
+            [viewmodel.name_plural]: (options.concat_documents) ? currentpage.documents : currentpage,
             [`${ viewmodel.name_plural }total`]: result.collection_count,
             [`${ viewmodel.name_plural }totalpages`]: result.collection_pages,
           };
-          if (jsonReq(req)) return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
-          else {
+          res.locals = Object.assign({}, res.locals, data);
+          if (jsonReq(req) && options.skip_json_post_transforms) {
+            req.controllerData[viewmodel.name_plural] = data;
+            return options.protocol.respond(req, res, Object.assign({}, options, { data, }));
+          } else {
             req.controllerData[viewmodel.name_plural] = data;
             next();
           }
@@ -523,9 +526,6 @@ function getRespondInKindData(resOptions) {
     originalUrl: inKindReq.originalUrl,
     headerHost: inKindReq.headers.host,
   };
-  // console.log('inKindRes.locals', inKindRes.locals);
-  // console.log('inKindReq.app.locals', inKindReq.app.locals);
-  // console.log({ responseData });
   return responseData;
 }
 
