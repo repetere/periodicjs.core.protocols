@@ -290,11 +290,19 @@ const UPDATE = function(options = {}) {
         id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id'],
         track_changes: (req.saverevision === true) ? true : undefined,
         model: Model,
+        updatedoc: req.body.updatedoc || req.body,
       });
       return dbAdapter.update(updateOptions)
-        .then(options.protocol.redirect.bind(options.protocol, req, res, {
-          model_name: `p-admin/${ options.model_name }/edit/`,
-        }), err => {
+        .then(updatedDoc => {
+          if (jsonReq(req)) {
+            return options.protocol.respond(req, res, Object.assign({}, options, { data: updatedDoc, }));
+          } else {
+            return options.protocol.redirect.call(options.protocol, req, res, {
+              model_name: `p-admin/${options.model_name}/edit/`,
+            });
+          }
+        })
+        .catch(err => {
           options.protocol.error(req, res, { err, });
           return options.protocol.exception(req, res, { err, });
         });
