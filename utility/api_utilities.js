@@ -286,10 +286,11 @@ const UPDATE = function(options = {}) {
   }
   return function(req, res) {
     try {
-      let updateOptions = Object.assign(options, req.body, {
+      let updateOptions = Object.assign(options, req.controllerData, req.body, {
         id: req.params.id || req.body.updatedoc[dbAdapter.docid || '_id'],
         track_changes: (req.saverevision === true) ? true : undefined,
         model: Model,
+        depopulate: req.depopulate || false,
         updatedoc: req.body.updatedoc || req.body,
       });
       return dbAdapter.update(updateOptions)
