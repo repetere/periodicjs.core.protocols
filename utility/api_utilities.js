@@ -199,7 +199,14 @@ const REMOVE = function(options = {}) {
     try {
       let removeDocument = req.controllerData[viewmodel.name];
       return dbAdapter.delete({ model: Model, deleteid: removeDocument._id.toString() || removeDocument[dbAdapter.docid], })
-        .then(options.protocol.redirect.bind(options.protocol, req, res, { model_name, }), err => {
+        .then(deletedDoc => {
+          if (jsonReq(req)) {
+            return options.protocol.respond(req, res, Object.assign({}, options, { data: deletedDoc, }));
+          } else {
+            return options.protocol.redirect.bind(options.protocol, req, res, { model_name, });
+          }
+        })
+        .catch(err => {
           options.protocol.error(req, res, { err, });
           return options.protocol.exception(req, res, { err, });
         });
