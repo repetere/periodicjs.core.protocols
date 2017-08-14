@@ -203,7 +203,7 @@ const REMOVE = function(options = {}) {
           if (jsonReq(req)) {
             return options.protocol.respond(req, res, Object.assign({}, options, { data: deletedDoc, }));
           } else {
-            return options.protocol.redirect.bind(options.protocol, req, res, { model_name, });
+            return options.protocol.redirect.call(options.protocol, req, res, { model_name, });
           }
         })
         .catch(err => {
