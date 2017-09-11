@@ -3,7 +3,7 @@ const path = require('path');
 const os = require('os');
 const Promisie = require('promisie');
 const API_ADAPTERS = require(path.join(__dirname, '../api_adapters/index'));
-
+const UTILITY = require('../utility/api_utilities');
 /**
  * Appends a standard set of request data to an error response
  * @param  {Object} req  An express request object
@@ -69,16 +69,16 @@ const HTTP_ADAPTER = class HTTP_Adapter {
    * @param {Object} [options.logger=console] A logger module
    */
   constructor(options = {}) {
-      this.db = options.db;
-      this.express = options.express;
-      this.responder = options.responder;
-      this.config = options.config || {};
-      this.settings = options.settings || {};
-      this.resources = options.resources || {};
-      this.api = new API_ADAPTERS[options.api](this, options);
-      this.logger = options.logger || console;
-      this.utilities = options.utilities || {};
-    }
+    this.db = options.db;
+    this.express = options.express;
+    this.responder = options.responder;
+    this.config = options.config || {};
+    this.settings = options.settings || {};
+    this.resources = options.resources || {};
+    this.api = new API_ADAPTERS[options.api](this, options);
+    this.logger = options.logger || console;
+    this.utilities = options.utilities || {};
+  }
     /**
      * Handles logging errors
      * @param  {Object} req     Express request object
@@ -88,12 +88,12 @@ const HTTP_ADAPTER = class HTTP_Adapter {
      * @return {Object}         this
      */
   error(req, res, options = {}) {
-      let err = options.err;
-      let data = (err) ? { err, } : {};
-      if (req) data = generateErrorDetails.call(this, req, data);
-      this.logger.error((err instanceof Error || err.message) ? err.message : 'ERROR\r\n', (err instanceof Error || err.stack) ? err.stack : {}, data);
-      return this;
-    }
+    let err = options.err;
+    let data = (err) ? { err, } : {};
+    if (req) data = generateErrorDetails.call(this, req, data);
+    this.logger.error((err instanceof Error || err.message) ? err.message : 'ERROR\r\n', (err instanceof Error || err.stack) ? err.stack : {}, data);
+    return this;
+  }
     /**
      * Handles logging warns
      * @param  {Object} req     Express request object
@@ -103,12 +103,12 @@ const HTTP_ADAPTER = class HTTP_Adapter {
      * @return {Object}         this
      */
   warn(req, res, options = {}) {
-      let err = options.err;
-      let data = (err) ? { err, } : {};
-      if (req) data = generateErrorDetails.call(this, req, data);
-      this.logger.warn((err instanceof Error || err.message) ? err.message : 'WARNING\r\n', (err instanceof Error || err.stack) ? err.stack : {}, data);
-      return this;
-    }
+    let err = options.err;
+    let data = (err) ? { err, } : {};
+    if (req) data = generateErrorDetails.call(this, req, data);
+    this.logger.warn((err instanceof Error || err.message) ? err.message : 'WARNING\r\n', (err instanceof Error || err.stack) ? err.stack : {}, data);
+    return this;
+  }
     /**
      * Handles sending an error response
      * @param  {Object} req     Express request object
@@ -118,22 +118,22 @@ const HTTP_ADAPTER = class HTTP_Adapter {
      * @return {Object}         this
      */
   exception(req, res, options = {}) {
-      let err = (typeof this.config.exception_message === 'string') ? { message: this.config.exception_message, } : options.err;
-      if (req.xhr) {
-        res.status(500).send({
-          result: 'error',
-          data: {
+    let err = (typeof this.config.exception_message === 'string') ? { message: this.config.exception_message, } : options.err;
+    if (req.xhr) {
+      res.status(500).send({
+        result: 'error',
+        data: {
             error: (err) ? err.message : 'something blew up!',
           },
-        });
-      } else {
-        res.status(500).render('home/error500', {
-          message: err.message,
-          error: err,
-        });
-      }
-      return this;
+      });
+    } else {
+      res.status(500).render('home/error500', {
+        message: err.message,
+        error: err,
+      });
     }
+    return this;
+  }
     /**
      * Handles sending the response to a request by rendering data according to this.responder configuration
      * @param  {Object} req     Express request object
@@ -148,15 +148,15 @@ const HTTP_ADAPTER = class HTTP_Adapter {
      * @return {Object}         this
      */
   respond(req, res, options = {}) {
-      let { err, data, } = options;
-      if (err && !options.ignore_error) this.error(req, res, options);
-      let responder = (err) ? this.responder.error.bind(this.responder) : this.responder.render.bind(this.responder);
-      let responder_override = (options.responder_override) ? options.responder_override : false;
-      if (responder_override) {
-        if (req.query.callback) res.status(200).jsonp(responder_override);
-        else res.status(200).send(responder_override);
-      } else {
-        return responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), Object.assign(options, { req, res, skip_response: (options.return_response_data === true), }))
+    let { err, data, } = options;
+    if (err && !options.ignore_error) this.error(req, res, options);
+    let responder = (err) ? this.responder.error.bind(this.responder) : this.responder.render.bind(this.responder);
+    let responder_override = (options.responder_override) ? options.responder_override : false;
+    if (responder_override) {
+      if (req.query.callback) res.status(200).jsonp(responder_override);
+      else res.status(200).send(responder_override);
+    } else {
+      return responder((err) ? err : ((!options.skip_default_props) ? _generateSuccessDetails.call(this, req, data) : data), Object.assign(options, { req, res, skip_response: (options.return_response_data === true), }))
           .try(result => {
             if (options.return_response_data === true) return Promisie.resolve(result);
           })
@@ -164,9 +164,9 @@ const HTTP_ADAPTER = class HTTP_Adapter {
             if (options.return_response_data === true) return Promisie.reject(err);
             this.exception(req, res, Object.assign({}, options, { err, }));
           });
-      }
-      return this;
     }
+    return this;
+  }
     /**
      * Handles redirects
      * @param  {Object} req     Express request object
@@ -176,9 +176,20 @@ const HTTP_ADAPTER = class HTTP_Adapter {
      * @return {Object}         this
      */
   redirect(req, res, options = {}) {
-      res.redirect(req.redirectpath || `/${ options.model_name }`);
+    if (req.usejsonresponse!==false && UTILITY.jsonReq(req)) {
+      res.send({
+        data: {
+        },
+        callbackProps: req.redirectpath || `/${options.model_name}`,
+        result: 'success',
+        status: 200,
+      });
+      
+    } else {
+      res.redirect(req.redirectpath || `/${options.model_name}`);
       return this;
     }
+  }
     /**
      * Convenience method for accessing .implement method on API adapter. Also handles implementing controllers and routers for multiple models
      * @param  {Object} options Configurable options for implementing controllers and routers. See API adapter .implement method for more details

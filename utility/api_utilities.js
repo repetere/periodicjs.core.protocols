@@ -261,11 +261,14 @@ const CREATE = function(options = {}) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function(req, res) {
+  return function (req, res) {
     try {
       return dbAdapter.create({ newdoc: req.body, model: Model, })
-        .then(options.protocol.redirect.bind(options.protocol, req, res, {
-          model_name: `p-admin/content/${ options.model_name }/`,
+        .then(newdoc => options.protocol.redirect.call(options.protocol, req, res, {
+          model_name: (req.headers && req.headers.origin  && req.headers.referer && newdoc && newdoc._id)
+            ? path.join(req.headers.referer.replace(req.headers.origin+'/',''),newdoc.name||newdoc._id)
+          : `/data/${options.model_name}/`,
+          newdoc,
         }), err => {
           options.protocol.error(req, res, { err, });
           return options.protocol.exception(req, res, { err, });
@@ -547,5 +550,9 @@ function getRespondInKindData(resOptions) {
 
 module.exports = (function() {
   view_adapter = ReponderInterface.create({ adapter: 'html', extname: '.ejs', });
-  return { NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI, setViewModelProperties, };
+  return {
+    NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI,
+    jsonReq,
+    setViewModelProperties,
+  };
 })();
