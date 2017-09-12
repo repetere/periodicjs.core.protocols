@@ -1,11 +1,12 @@
 'use strict';
 const ReponderInterface = require('periodicjs.core.responder');
+const PeriodicCoreUtilities = require('periodicjs.core.utilities');
 const pluralize = require('pluralize');
 const capitalize = require('capitalize');
 const path = require('path');
 const querystring = require('querystring');
 const expand_names = require(path.join(__dirname, './expand_names'));
-
+const CoreUtilities = new PeriodicCoreUtilities({});
 var view_adapter;
 var active_model = {
   label: null,
@@ -247,6 +248,13 @@ const SEARCH = function(options = {}) {
   return composeMiddleware(middleware_options);
 };
 
+function getRedirectModelName(options) {
+  const { req, newdoc, } = options;
+  return (req.headers && req.headers.origin && req.headers.referer && newdoc && newdoc._id)
+    ? path.join(req.headers.referer.replace(req.headers.origin + '/', ''), newdoc.name || newdoc._id.toString())
+    : `/data/${options.model_name}/`;
+}
+
 /**
  * Generates middleware that handles creating items in a database
  * @param {Object} options Configurable options for create middleware
@@ -263,13 +271,31 @@ const CREATE = function(options = {}) {
   }
   return function (req, res) {
     try {
-      return dbAdapter.create({ newdoc: req.body, model: Model, })
-        .then(newdoc => options.protocol.redirect.call(options.protocol, req, res, {
-          model_name: (req.headers && req.headers.origin  && req.headers.referer && newdoc && newdoc._id)
-            ? path.join(req.headers.referer.replace(req.headers.origin+'/',''),newdoc.name||newdoc._id)
-          : `/data/${options.model_name}/`,
-          newdoc,
-        }), err => {
+      if (req.body && req.body.title && !req.body.name) {
+        req.body.name = CoreUtilities.makeNiceName(req.body.title);
+      }
+      const newdoc = req.body;
+      return dbAdapter.create({ newdoc, model: Model, })
+        .then(newdoc => { 
+          if (jsonReq(req)) {
+            return options.protocol.respond(req, res, Object.assign({}, options, { 
+              data: {
+                newdoc,
+                createresponse: newdoc,
+              },  
+            }));
+          } else {
+            return options.protocol.redirect.call(options.protocol, req, res, {
+              model_name: getRedirectModelName({ req, newdoc, }),
+              
+              // (req.headers && req.headers.origin && req.headers.referer && newdoc && newdoc._id)
+              //   ? path.join(req.headers.referer.replace(req.headers.origin + '/', ''), newdoc.name || newdoc._id)
+              //   : `/data/${options.model_name}/`,
+              newdoc,
+            });
+          }
+        })
+        .catch(err => {
           options.protocol.error(req, res, { err, });
           return options.protocol.exception(req, res, { err, });
         });
@@ -303,6 +329,9 @@ const UPDATE = function(options = {}) {
         depopulate: req.depopulate || false,
         updatedoc: req.body.updatedoc || req.body,
       });
+      if (!updateOptions.updatedoc.updatedat) {
+        updateOptions.updatedoc.updatedat = new Date();
+      }
       return dbAdapter.update(updateOptions)
         .then(updatedDoc => {
           if (jsonReq(req)) {
@@ -314,7 +343,8 @@ const UPDATE = function(options = {}) {
             }));
           } else {
             return options.protocol.redirect.call(options.protocol, req, res, {
-              model_name: `p-admin/${options.model_name}/edit/`,
+              model_name: getRedirectModelName({ req, newdoc:updateOptions.updatedoc, }),
+              // `p-admin/${options.model_name}/edit/`,
             });
           }
         })
@@ -559,5 +589,6 @@ module.exports = (function() {
     NEW, SHOW, EDIT, INDEX, REMOVE, SEARCH, CREATE, UPDATE, LOAD, PAGINATE, LOAD_WITH_COUNT, LOAD_WITH_LIMIT, CLI,
     jsonReq,
     setViewModelProperties,
+    getRedirectModelName,
   };
 })();
