@@ -306,7 +306,12 @@ const UPDATE = function(options = {}) {
       return dbAdapter.update(updateOptions)
         .then(updatedDoc => {
           if (jsonReq(req)) {
-            return options.protocol.respond(req, res, Object.assign({}, options, { data: updatedDoc, }));
+            return options.protocol.respond(req, res, Object.assign({}, options, { 
+              data: {
+                updatedoc: updateOptions.updatedoc,
+                updateresponse: updatedDoc,
+              },  
+            }));
           } else {
             return options.protocol.redirect.call(options.protocol, req, res, {
               model_name: `p-admin/${options.model_name}/edit/`,
