@@ -275,7 +275,11 @@ const CREATE = function(options = {}) {
         req.body.name = CoreUtilities.makeNiceName(req.body.title);
       }
       const newdoc = req.body;
-      return dbAdapter.create({ newdoc, model: Model, })
+      const createDocOptions = Object.assign({
+        newdoc, 
+        model: Model,
+      },req.controllerData);
+      return dbAdapter.create(createDocOptions)
         .then(newdoc => { 
           if (jsonReq(req)) {
             return options.protocol.respond(req, res, Object.assign({}, options, { 
