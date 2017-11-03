@@ -278,7 +278,7 @@ const CREATE = function(options = {}) {
       const createDocOptions = Object.assign({
         newdoc, 
         model: Model,
-      },req.controllerData);
+      }, req.controllerData);
       return dbAdapter.create(createDocOptions)
         .then(newdoc => { 
           if (jsonReq(req)) {
@@ -408,7 +408,7 @@ const PAGINATE = function(options = {}) {
     else Model = options.model;
   }
   let viewmodel = setViewModelProperties(options);
-  return function(req, res, next) {
+  return function (req, res, next) {
     try {
       req.controllerData = (req.controllerData && typeof req.controllerData === 'object') ? req.controllerData : {};
       let query = (req.controllerData && req.controllerData.model_query) ? req.controllerData.model_query : req.query.query || {};
@@ -425,16 +425,16 @@ const PAGINATE = function(options = {}) {
           let currentpage = result['0'];
           if (req.query.skip) req.query.pagenum = Math.ceil(skip / pagelength) + 1;
           let data = {
-            [viewmodel.page_plural_count]: result.total,
-            [`${ viewmodel.name }limit`]: req.query.limit,
-            [`${ viewmodel.name }offset`]: req.query.skip || skip,
-            [`${ viewmodel.name }pages`]: result.total_pages,
-            [`${ viewmodel.name }page_current`]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
-            [`${ viewmodel.name }page_next`]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
-            [`${ viewmodel.name }page_prev`]: (req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined,
-            [viewmodel.name_plural]: (options.concat_documents) ? currentpage.documents : currentpage,
-            [`${ viewmodel.name_plural }total`]: result.collection_count,
-            [`${ viewmodel.name_plural }totalpages`]: result.collection_pages,
+            [ (req.query.genericdoc) ? 'docscount' : viewmodel.page_plural_count ]: result.total,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}limit` ]: req.query.limit,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}offset` ]: req.query.skip || skip,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}pages` ]: result.total_pages,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_current` ]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_next` ]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_prev` ]: (req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined,
+            [ (req.query.genericdoc) ? 'docs' : viewmodel.name_plural ]: (options.concat_documents) ? currentpage.documents : currentpage,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name_plural}total` ]: result.collection_count,
+            [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name_plural}totalpages` ]: result.collection_pages,
           };
           res.locals = Object.assign({}, res.locals, data);
           if (jsonReq(req) && options.skip_json_post_transforms) {
@@ -486,12 +486,12 @@ const LOAD = function(options = {}) {
       else if (req.controllerData.docid) docid = req.controllerData.docid;
       else if (req.query.docid) docid = req.query.docid;
       dbAdapter.load({
-          query: req.params.id,
-          fields,
-          docid,
-          model: Model,
-          population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
-        })
+        query: req.params.id,
+        fields,
+        docid,
+        model: Model,
+        population: (req.controllerData && (req.controllerData.skip_population === true || req.controllerData.skip_population === 'true')) ? '' : undefined,
+      })
         .then(result => {
           if (result) {
             req.controllerData[options.model_name] = result;
@@ -536,7 +536,7 @@ const CLI = function(options = {}) {
             name: search,
           }, {
             title: search,
-          }, ],
+          },],
         };
       }
       delete argv.search;
