@@ -269,7 +269,7 @@ const CREATE = function(options = {}) {
     if (!options.model) Model = dbAdapter.db_connection.model(capitalize(options.model_name));
     else Model = options.model;
   }
-  return function (req, res) {
+  return function (req, res, next) {
     try {
       if (req.body && req.body.title && !req.body.name) {
         req.body.name = CoreUtilities.makeNiceName(req.body.title);
@@ -281,7 +281,10 @@ const CREATE = function(options = {}) {
       }, req.controllerData);
       return dbAdapter.create(createDocOptions)
         .then(newdoc => { 
-          if (jsonReq(req)) {
+          if (req.returnData) {
+            req.controllerData = newdoc;
+            next();
+          } else if (jsonReq(req)) {
             return options.protocol.respond(req, res, Object.assign({}, options, { 
               data: {
                 newdoc,
