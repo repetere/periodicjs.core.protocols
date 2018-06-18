@@ -387,9 +387,18 @@ const LOAD_WITH_COUNT = function(options = {}) {
  */
 const LOAD_WITH_LIMIT = function(options = {}) {
   let viewmodel = setViewModelProperties(options);
-  return function(req, res, next) {
-    req.query.limit = req.query[`${ viewmodel.name_plural }perpage`] || req.query.docsperpage || req.query.limit || req.body[`${ viewmodel.name_plural }perpage`] || req.body.docsperpage || req.body.limit || 15;
-    req.query.pagenum = ((req.query.pagenum && req.query.pagenum > 0) || (req.body.pagenum && req.body.pagenum > 0)) ? req.query.pagenum || req.body.pagenum : 1;
+  return function (req, res, next) {
+    req.body = Object.assign({}, req.body);
+    req.query.limit = req.query[ `${viewmodel.name_plural}perpage` ]
+      || req.query.docsperpage
+      || req.query.limit
+      || req.body[ `${viewmodel.name_plural}perpage` ]
+      || req.body.docsperpage
+      || req.body.limit
+      || 15;
+    req.query.pagenum = ((req.query.pagenum && req.query.pagenum > 0) || (req.body.pagenum && req.body.pagenum > 0))
+      ? req.query.pagenum || req.body.pagenum
+      : 1;
     next();
   };
 };
