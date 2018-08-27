@@ -444,7 +444,7 @@ const PAGINATE = function(options = {}) {
             [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_current` ]: (req.query.pagenum) ? Number(req.query.pagenum) : 1,
             [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_next` ]: (req.query.pagenum) ? Number(req.query.pagenum) + 1 : 2,
             [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name}page_prev` ]: (req.query.pagenum) ? Number(req.query.pagenum) - 1 : undefined,
-            [ (req.query.genericdoc) ? 'docs' : viewmodel.name_plural ]: (options.concat_documents) ? currentpage.documents : currentpage,
+            [ (req.query.genericdoc) ? 'docs' : viewmodel.name_plural ]: (options.concat_documents!==false) ? currentpage.documents : currentpage,
             [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name_plural}total` ]: result.collection_count,
             [ `${(req.query.genericdoc) ? 'docs' : viewmodel.name_plural}totalpages` ]: result.collection_pages,
           };
